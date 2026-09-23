@@ -23,11 +23,11 @@
 ## File Structure
 
 ```
-MetroDisplay.sln
+MetroDisplay.slnx
 
 src/MetroDisplay.Contracts/
-  NetworkScene.cs          Wire DTOs: NetworkScene, CityInfo, ExtentInfo,
-                           LineScene, ShapeScene, StationScene, EdgeLabel
+  NetworkScene.cs          Wire DTOs: NetworkScene, CityMetadata, ExtentInfo,
+                           LineScene, ShapeGeometry, StationMarker, EdgeLabel
   NetworkArtifact.cs       NetworkArtifact, ArtifactManifest, TripIndex
   CityConfig.cs            CityConfig and its nested config records
   JsonDefaults.cs          The single JsonSerializerOptions used everywhere
@@ -72,7 +72,7 @@ cities/mbta.json
 ### Task 1: Solution scaffold and wire contracts
 
 **Files:**
-- Create: `MetroDisplay.sln`
+- Create: `MetroDisplay.slnx` (the .NET 10 SDK default; `dotnet new sln` produces the XML format)
 - Create: `src/MetroDisplay.Contracts/MetroDisplay.Contracts.csproj`
 - Create: `src/MetroDisplay.Contracts/NetworkScene.cs`
 - Create: `src/MetroDisplay.Contracts/JsonDefaults.cs`
@@ -81,9 +81,9 @@ cities/mbta.json
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `NetworkScene`, `CityInfo`, `ExtentInfo`, `LineScene`, `ShapeScene`, `StationScene`, `EdgeLabel`, and `JsonDefaults.Options`. Every later task serializes through `JsonDefaults.Options`.
+- Produces: `NetworkScene`, `CityMetadata`, `ExtentInfo`, `LineScene`, `ShapeGeometry`, `StationMarker`, `EdgeLabel`, and `JsonDefaults.Options`. Every later task serializes through `JsonDefaults.Options`.
 
-- [ ] **Step 1: Create the solution and projects**
+- [x] **Step 1: Create the solution and projects**
 
 ```bash
 dotnet new sln -n MetroDisplay
@@ -96,7 +96,7 @@ dotnet add tests/MetroDisplay.Gtfs.Static.Tests reference src/MetroDisplay.Gtfs.
 rm src/MetroDisplay.Contracts/Class1.cs src/MetroDisplay.Gtfs.Static/Class1.cs
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 This test is the contract lock. It asserts the exact JSON field names from spec §8 — if a property is ever renamed, this fails before the renderer does.
 
@@ -116,16 +116,16 @@ public class NetworkSceneSerializationTests
     {
         var scene = new NetworkScene(
             ArtifactVersion: "mbta@2026-09-01.a3f1",
-            City: new CityInfo("mbta", "BOSTON", "MBTA", "America/New_York"),
+            City: new CityMetadata("mbta", "BOSTON", "MBTA", "America/New_York"),
             Extent: new ExtentInfo(Aspect: 1.34, CoreRadiusKm: 22, SpanKm: 44),
             Lines:
             [
                 new LineScene("Red", "RED", "#DA291C",
                 [
-                    new ShapeScene("931_0009", [0.1043, 0.8812, 0.1121, 0.8790], 28140)
+                    new ShapeGeometry("931_0009", [0.1043, 0.8812, 0.1121, 0.8790], 28140)
                 ])
             ],
-            Stations: [new StationScene(0.412, 0.331, "Park St", 2)],
+            Stations: [new StationMarker(0.412, 0.331, "Park St", 2)],
             EdgeLabels: [new EdgeLabel(0.998, 0.402, "TO ALEWIFE", -12.4, "Red")]);
 
         string json = JsonSerializer.Serialize(scene, JsonDefaults.Options);
@@ -141,7 +141,7 @@ public class NetworkSceneSerializationTests
 }
 ```
 
-- [ ] **Step 3: Run the test and confirm it fails**
+- [x] **Step 3: Run the test and confirm it fails**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter NetworkSceneSerializationTests
@@ -149,7 +149,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter NetworkSceneSerializat
 
 Expected: compile error — `NetworkScene` does not exist.
 
-- [ ] **Step 4: Write the contracts**
+- [x] **Step 4: Write the contracts**
 
 `src/MetroDisplay.Contracts/NetworkScene.cs`:
 
@@ -159,13 +159,13 @@ namespace MetroDisplay.Contracts;
 /// <summary>The `network` message: everything a renderer needs to draw one city's map.</summary>
 public sealed record NetworkScene(
     string ArtifactVersion,
-    CityInfo City,
+    CityMetadata City,
     ExtentInfo Extent,
     IReadOnlyList<LineScene> Lines,
-    IReadOnlyList<StationScene> Stations,
+    IReadOnlyList<StationMarker> Stations,
     IReadOnlyList<EdgeLabel> EdgeLabels);
 
-public sealed record CityInfo(string Id, string Name, string Agency, string Timezone);
+public sealed record CityMetadata(string Id, string Name, string Agency, string Timezone);
 
 /// <summary>Geographic window. Aspect is width/height; spanKm is ground distance across.</summary>
 public sealed record ExtentInfo(double Aspect, double CoreRadiusKm, double SpanKm);
@@ -174,12 +174,12 @@ public sealed record LineScene(
     string Id,
     string Name,
     string Color,
-    IReadOnlyList<ShapeScene> Shapes);
+    IReadOnlyList<ShapeGeometry> Shapes);
 
 /// <summary>Points are a flat [x0,y0,x1,y1,...] array in normalized extent space.</summary>
-public sealed record ShapeScene(string Id, IReadOnlyList<double> Points, double LengthM);
+public sealed record ShapeGeometry(string Id, IReadOnlyList<double> Points, double LengthM);
 
-public sealed record StationScene(double X, double Y, string Name, int Rank);
+public sealed record StationMarker(double X, double Y, string Name, int Rank);
 
 /// <summary>Drawn where a clipped line leaves the extent. Angle is degrees, screen convention.</summary>
 public sealed record EdgeLabel(double X, double Y, string Text, double Angle, string Line);
@@ -208,7 +208,7 @@ public static class JsonDefaults
 }
 ```
 
-- [ ] **Step 5: Run the test and confirm it passes**
+- [x] **Step 5: Run the test and confirm it passes**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter NetworkSceneSerializationTests
@@ -216,7 +216,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter NetworkSceneSerializat
 
 Expected: PASS, 1 test.
 
-- [ ] **Step 6: Hand off for commit**
+- [x] **Step 6: Hand off for commit**
 
 Report to the developer, with this message:
 
@@ -2356,7 +2356,7 @@ public class NetworkArtifactBuilderTests
     {
         NetworkArtifact artifact = BuildFromFixture();
 
-        foreach (ShapeScene shape in artifact.Scene.Lines.SelectMany(line => line.Shapes))
+        foreach (ShapeGeometry shape in artifact.Scene.Lines.SelectMany(line => line.Shapes))
         {
             Assert.NotEmpty(shape.Points);
             Assert.All(shape.Points, value => Assert.InRange(value, 0.0, 1.0));
@@ -2455,7 +2455,7 @@ public static class ArtifactValidator
                 "Refusing to publish it; the previous artifact remains in use.");
         }
 
-        foreach (ShapeScene shape in artifact.Scene.Lines.SelectMany(line => line.Shapes))
+        foreach (ShapeGeometry shape in artifact.Scene.Lines.SelectMany(line => line.Shapes))
         {
             if (shape.Points.Count < 4 || shape.Points.Count % 2 != 0)
             {
@@ -2543,7 +2543,7 @@ public static class NetworkArtifactBuilder
                 continue;
             }
 
-            var shapes = new List<ShapeScene>();
+            var shapes = new List<ShapeGeometry>();
 
             foreach (string shapeId in shapeIds)
             {
@@ -2563,7 +2563,7 @@ public static class NetworkArtifactBuilder
                     string runShapeId = runIndex == 0 ? shapeId : $"{shapeId}#{runIndex}";
                     runIndex++;
 
-                    shapes.Add(new ShapeScene(
+                    shapes.Add(new ShapeGeometry(
                         runShapeId,
                         CoordinateNormalizer.Flatten(simplified, extent),
                         LengthInMetres(simplified, config.Extent.Core[0])));
@@ -2594,20 +2594,20 @@ public static class NetworkArtifactBuilder
                 shapes));
         }
 
-        List<StationScene> stations = archive.Stops
+        List<StationMarker> stations = archive.Stops
             .Where(stop => stop.LocationType == 1)
             .Select(stop => (stop, plane: MercatorProjector.Project(new GeoPoint(stop.Latitude, stop.Longitude))))
             .Where(entry => extent.Contains(entry.plane))
             .Select(entry =>
             {
                 (double x, double y) = CoordinateNormalizer.Normalize(entry.plane, extent);
-                return new StationScene(x, y, entry.stop.StopName, Rank: 1);
+                return new StationMarker(x, y, entry.stop.StopName, Rank: 1);
             })
             .ToList();
 
         var scene = new NetworkScene(
             ArtifactVersion: "pending",
-            City: new CityInfo(config.Id, config.Name, config.Agency, config.Timezone),
+            City: new CityMetadata(config.Id, config.Name, config.Agency, config.Timezone),
             Extent: new ExtentInfo(
                 Aspect: Math.Round(extent.Aspect, 4),
                 CoreRadiusKm: config.Extent.CoreRadiusKm,
@@ -2742,9 +2742,9 @@ public class FileNetworkArtifactStoreTests : IDisposable
     {
         var scene = new NetworkScene(
             version,
-            new CityInfo(cityId, "TESTVILLE", "TT", "America/New_York"),
+            new CityMetadata(cityId, "TESTVILLE", "TT", "America/New_York"),
             new ExtentInfo(1.0, 22, 44),
-            [new LineScene("Red", "RED", "#DA291C", [new ShapeScene("shape-a", [0, 0, 1, 1], 1000)])],
+            [new LineScene("Red", "RED", "#DA291C", [new ShapeGeometry("shape-a", [0, 0, 1, 1], 1000)])],
             [],
             []);
 
@@ -3312,7 +3312,7 @@ output can be sanity-checked before the renderer exists.
 
 ## Known simplifications carried into Plan 2
 
-- **`StationScene.Rank` is always 1.** Spec §8 shows a rank of 2 without defining the scale.
+- **`StationMarker.Rank` is always 1.** Spec §8 shows a rank of 2 without defining the scale.
   It is presumably a prominence hint — draw interchanges larger than ordinary stops — but
   deriving it needs a rule (transfer count? route count through the stop?) that only matters
   once stations are visible. Plan 2 decides it against a real map rather than inventing it here.
