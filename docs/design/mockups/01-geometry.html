@@ -1,0 +1,101 @@
+<h2>How should the network geometry be drawn?</h2>
+<p class="subtitle">Same fake 3-line system, three renderings. Dim lines = track, bright dots = live vehicles. This is the single biggest look-and-feel decision, and it drives how much per-city hand-work each new city needs.</p>
+
+<style>
+  .sys { background:#07090c; border-radius:6px; display:block; width:100%; height:auto; }
+  .trk { fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
+  .a{stroke:#4ea3ff} .b{stroke:#ff9f43} .c{stroke:#57e0a0}
+  .stn { fill:#07090c; stroke:#7d8899; stroke-width:1.2; }
+  .veh { fill:#fff; }
+  .vehglow { fill:#fff; opacity:.18; }
+  .cards .card-image { padding:0; background:#07090c; }
+  .meta { font-size:12px; line-height:1.5; opacity:.75; margin-top:6px }
+  .meta b { opacity:1 }
+</style>
+
+<div class="cards">
+
+  <div class="card" data-choice="geographic" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg class="sys" viewBox="0 0 320 200">
+        <path class="trk c" d="M10,100 C60,105 90,108 140,104 S220,98 310,112"/>
+        <path class="trk b" d="M30,40 C70,60 90,90 130,105 S180,140 240,175"/>
+        <path class="trk a" d="M20,170 C60,150 70,120 100,110 S150,95 185,70 S230,40 300,28"/>
+        <g class="stn">
+          <circle cx="20" cy="170" r="2.6"/><circle cx="100" cy="110" r="2.6"/>
+          <circle cx="185" cy="70" r="2.6"/><circle cx="300" cy="28" r="2.6"/>
+          <circle cx="30" cy="40" r="2.6"/><circle cx="130" cy="105" r="2.6"/>
+          <circle cx="240" cy="175" r="2.6"/><circle cx="10" cy="100" r="2.6"/>
+          <circle cx="140" cy="104" r="2.6"/><circle cx="310" cy="112" r="2.6"/>
+        </g>
+        <g><circle class="vehglow" cx="62" cy="133" r="7"/><circle class="veh" cx="62" cy="133" r="2.8"/></g>
+        <g><circle class="vehglow" cx="216" cy="52" r="7"/><circle class="veh" cx="216" cy="52" r="2.8"/></g>
+        <g><circle class="vehglow" cx="163" cy="126" r="7"/><circle class="veh" cx="163" cy="126" r="2.8"/></g>
+        <g><circle class="vehglow" cx="232" cy="98" r="7"/><circle class="veh" cx="232" cy="98" r="2.8"/></g>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A &mdash; True geographic</h3>
+      <p>Raw <code>shapes.txt</code> polylines, projected and fit to the viewport. The map <i>is</i> the city's real shape.</p>
+      <p class="meta"><b>New city cost:</b> zero &mdash; drop in a feed config, it just works.<br>
+      <b>Risk:</b> dense downtowns turn into an unreadable knot; a long suburban branch squashes the core into 10% of the screen.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="simplified" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg class="sys" viewBox="0 0 320 200">
+        <path class="trk c" d="M10,100 L84,106 L148,104 L226,99 L310,112"/>
+        <path class="trk b" d="M30,40 L72,66 L112,94 L158,124 L204,152 L240,175"/>
+        <path class="trk a" d="M20,170 L62,131 L104,112 L152,92 L196,62 L248,44 L300,28"/>
+        <g class="stn">
+          <circle cx="20" cy="170" r="2.6"/><circle cx="104" cy="112" r="2.6"/>
+          <circle cx="196" cy="62" r="2.6"/><circle cx="300" cy="28" r="2.6"/>
+          <circle cx="30" cy="40" r="2.6"/><circle cx="112" cy="94" r="2.6"/>
+          <circle cx="240" cy="175" r="2.6"/><circle cx="10" cy="100" r="2.6"/>
+          <circle cx="148" cy="104" r="2.6"/><circle cx="310" cy="112" r="2.6"/>
+        </g>
+        <g><circle class="vehglow" cx="62" cy="131" r="7"/><circle class="veh" cx="62" cy="131" r="2.8"/></g>
+        <g><circle class="vehglow" cx="222" cy="53" r="7"/><circle class="veh" cx="222" cy="53" r="2.8"/></g>
+        <g><circle class="vehglow" cx="181" cy="138" r="7"/><circle class="veh" cx="181" cy="138" r="2.8"/></g>
+        <g><circle class="vehglow" cx="226" cy="99" r="7"/><circle class="veh" cx="226" cy="99" r="2.8"/></g>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B &mdash; Simplified geographic <span class="label">recommended</span></h3>
+      <p>Same true bearings, but polylines run through Douglas&ndash;Peucker to strip GPS noise, plus a tuned line weight and minimum station spacing.</p>
+      <p class="meta"><b>New city cost:</b> zero &mdash; one tolerance number, auto-derived from system extent.<br>
+      <b>Why:</b> keeps geographic honesty (recognisable city shape) and the wireframe crispness, and it's the only option where vehicle lat/lon maps to the screen with no lookup table.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="octolinear" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg class="sys" viewBox="0 0 320 200">
+        <path class="trk c" d="M10,100 L310,100"/>
+        <path class="trk b" d="M30,40 L80,90 L130,90 L180,140 L240,140 L240,178"/>
+        <path class="trk a" d="M20,170 L70,120 L120,120 L170,70 L272,70 L300,42"/>
+        <g class="stn">
+          <circle cx="20" cy="170" r="2.6"/><circle cx="120" cy="120" r="2.6"/>
+          <circle cx="170" cy="70" r="2.6"/><circle cx="300" cy="42" r="2.6"/>
+          <circle cx="30" cy="40" r="2.6"/><circle cx="130" cy="90" r="2.6"/>
+          <circle cx="240" cy="178" r="2.6"/><circle cx="10" cy="100" r="2.6"/>
+          <circle cx="150" cy="100" r="2.6"/><circle cx="310" cy="100" r="2.6"/>
+        </g>
+        <g><circle class="vehglow" cx="70" cy="120" r="7"/><circle class="veh" cx="70" cy="120" r="2.8"/></g>
+        <g><circle class="vehglow" cx="221" cy="70" r="7"/><circle class="veh" cx="221" cy="70" r="2.8"/></g>
+        <g><circle class="vehglow" cx="205" cy="140" r="7"/><circle class="veh" cx="205" cy="140" r="2.8"/></g>
+        <g><circle class="vehglow" cx="262" cy="100" r="7"/><circle class="veh" cx="262" cy="100" r="2.8"/></g>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C &mdash; Octolinear schematic</h3>
+      <p>Beck-style diagram: every segment snapped to 0&deg;/45&deg;/90&deg;, spacing evened out. What a real transit map looks like.</p>
+      <p class="meta"><b>New city cost:</b> high &mdash; good octolinear layout is an NP-hard optimisation; in practice it's hand-drawn per city.<br>
+      <b>Risk:</b> a vehicle's lat/lon no longer has a screen position &mdash; you must snap it to the nearest track segment and interpolate. Breaks the "any city is a config file" goal.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:18px">Worth knowing: B and C aren't exclusive forever. If the scene contract carries <i>projected</i> coordinates rather than lat/lon, a per-city hand-drawn schematic can be added later as an optional override for the 2&ndash;3 cities you care most about, without touching the pipeline.</p>

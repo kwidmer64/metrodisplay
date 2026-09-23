@@ -1,0 +1,155 @@
+<h2>Section 1 &mdash; Architecture</h2>
+<p class="subtitle">Four stages, left to right. The two ingest components never talk to each other &mdash; they meet only through a versioned artifact. Arrow labels are cadences, and they differ by five orders of magnitude, which is the whole reason the contract splits into two message types.</p>
+
+<div style="background:#07090c;border:1px solid #1b2230;border-radius:10px;padding:8px;height:600px">
+<svg viewBox="0 0 1020 600" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#5d6b7d"/>
+    </marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#4ea3ff"/>
+    </marker>
+  </defs>
+  <style>
+    .bx { fill:#0d1218; stroke:#26303d; stroke-width:1.2; rx:7 }
+    .bx-ext { fill:#0b0f14; stroke:#2c2418; stroke-dasharray:4 3 }
+    .bx-hi { stroke:#37506e }
+    .ttl { fill:#e8eef6; font:600 14px ui-monospace,monospace; letter-spacing:.03em }
+    .ttl-s { fill:#e8eef6; font:600 12.5px ui-monospace,monospace }
+    .sub { fill:#7a869a; font:11.5px ui-monospace,monospace }
+    .sub2 { fill:#5d6b7d; font:11px ui-monospace,monospace }
+    .col { fill:#4b586a; font:600 11px ui-monospace,monospace; letter-spacing:.14em }
+    .ln { stroke:#5d6b7d; stroke-width:1.4; fill:none; marker-end:url(#ah) }
+    .ln-b { stroke:#4ea3ff; stroke-width:1.6; fill:none; marker-end:url(#ahb); opacity:.9 }
+    .cad { fill:#8e9bad; font:10.5px ui-monospace,monospace }
+    .cad-b { fill:#7fb6f0; font:10.5px ui-monospace,monospace }
+    .amber { fill:#c9a227 }
+  </style>
+
+  <text class="col" x="40" y="34">AGENCY</text>
+  <text class="col" x="268" y="34">INGEST</text>
+  <text class="col" x="590" y="34">SERVE</text>
+  <text class="col" x="838" y="34">DISPLAY</text>
+
+  <!-- ============ AGENCY ============ -->
+  <rect class="bx bx-ext" x="34" y="52" width="176" height="52"/>
+  <text class="ttl-s" x="48" y="75">static GTFS .zip</text>
+  <text class="sub2" x="48" y="92">shapes / stops / trips</text>
+
+  <rect class="bx bx-ext" x="34" y="250" width="176" height="52"/>
+  <text class="ttl-s" x="48" y="273">RT VehiclePositions</text>
+  <text class="sub2" x="48" y="290">protobuf</text>
+
+  <rect class="bx bx-ext" x="34" y="318" width="176" height="52"/>
+  <text class="ttl-s" x="48" y="341">RT ServiceAlerts</text>
+  <text class="sub2" x="48" y="358">protobuf</text>
+
+  <!-- ============ INGEST ============ -->
+  <rect class="bx bx-hi" x="268" y="52" width="230" height="120"/>
+  <text class="ttl" x="284" y="76">Gtfs.Static</text>
+  <text class="sub" x="284" y="96">rail filter &rarr; shape dedupe</text>
+  <text class="sub" x="284" y="113">&rarr; mercator &rarr; clip to radius</text>
+  <text class="sub" x="284" y="130">&rarr; Douglas&ndash;Peucker</text>
+  <text class="sub" x="284" y="147">&rarr; normalize &rarr; quantize</text>
+  <text class="sub2" x="284" y="164">lib + CLI &middot; no network in tests</text>
+
+  <!-- artifact store -->
+  <rect class="bx" x="268" y="190" width="230" height="52" style="stroke:#3d4f63"/>
+  <text class="ttl-s" x="284" y="212">NetworkArtifact store</text>
+  <text class="sub2" x="284" y="229">IGeometryArtifactStore &middot; disk &rarr; blob</text>
+
+  <rect class="bx bx-hi" x="268" y="290" width="230" height="102"/>
+  <text class="ttl" x="284" y="314">Realtime</text>
+  <text class="sub" x="284" y="334">decode protobuf</text>
+  <text class="sub" x="284" y="351">&rarr; trip_id &rarr; shape_id join</text>
+  <text class="sub" x="284" y="368">&rarr; t along shape (0..1)</text>
+  <text class="sub2" x="284" y="385">only component that reads protobuf</text>
+
+  <!-- ============ SERVER ============ -->
+  <rect class="bx bx-hi" x="560" y="120" width="212" height="210"/>
+  <text class="ttl" x="576" y="146">Server</text>
+  <text class="sub2" x="576" y="164">ASP.NET Core</text>
+  <line x1="576" y1="176" x2="756" y2="176" stroke="#1f2835"/>
+  <text class="sub" x="576" y="196">rotation scheduler</text>
+  <text class="sub2" x="576" y="212">~5 min, configurable</text>
+  <text class="sub" x="576" y="236">WebSocket hub</text>
+  <text class="sub2" x="576" y="252">fan-out, one poll per city</text>
+  <text class="sub" x="576" y="276">artifact refresh</text>
+  <text class="sub2" x="576" y="292">daily conditional GET</text>
+  <text class="sub" x="576" y="316">/healthz</text>
+
+  <!-- ============ DISPLAYS ============ -->
+  <rect class="bx bx-hi" x="826" y="120" width="164" height="60"/>
+  <text class="ttl-s" x="840" y="143">browser</text>
+  <text class="sub2" x="840" y="160">canvas2d &middot; v1</text>
+
+  <rect class="bx" x="826" y="196" width="164" height="60" style="stroke-dasharray:4 3"/>
+  <text class="ttl-s" x="840" y="219">Pi kiosk / native</text>
+  <text class="sub2" x="840" y="236">later</text>
+
+  <rect class="bx" x="826" y="272" width="164" height="60" style="stroke-dasharray:4 3"/>
+  <text class="ttl-s" x="840" y="295">ESP32 panel</text>
+  <text class="sub2" x="840" y="312">optional</text>
+
+  <!-- ============ ARROWS ============ -->
+  <path class="ln" d="M210,78 L262,78"/>
+  <text class="cad" x="212" y="70">daily 304</text>
+
+  <path class="ln" d="M383,172 L383,184"/>
+  <text class="cad" x="392" y="182">write</text>
+
+  <path class="ln" d="M383,242 L383,284"/>
+  <text class="cad" x="392" y="266">read by version</text>
+
+  <path class="ln" d="M210,276 L262,300"/>
+  <text class="cad" x="196" y="240">15&ndash;30s</text>
+  <path class="ln" d="M210,344 L262,352"/>
+
+  <path class="ln-b" d="M498,216 C530,216 534,180 554,172"/>
+  <text class="cad-b" x="500" y="200">NetworkScene</text>
+
+  <path class="ln-b" d="M498,340 C530,340 534,290 554,276"/>
+  <text class="cad-b" x="500" y="360">VehicleFrame</text>
+
+  <path class="ln-b" d="M772,150 L820,150"/>
+  <path class="ln-b" d="M772,200 C800,200 800,222 820,226"/>
+  <path class="ln-b" d="M772,250 C800,250 800,296 820,302"/>
+  <text class="cad-b" x="772" y="140">WebSocket</text>
+
+  <!-- ============ CONTRACTS BAR ============ -->
+  <rect class="bx" x="268" y="430" width="722" height="54" style="stroke:#3a4757"/>
+  <text class="ttl-s" x="286" y="452">MetroDisplay.Contracts</text>
+  <text class="sub2" x="286" y="470">zero dependencies &middot; scene DTOs + city config schema &middot; TS types generated from it, so the renderer can't drift</text>
+  <path class="ln" d="M383,392 L383,424" style="opacity:.45"/>
+  <path class="ln" d="M666,330 L666,424" style="opacity:.45"/>
+  <path class="ln" d="M908,332 L908,424" style="opacity:.45"/>
+
+  <!-- ============ CADENCE LEGEND ============ -->
+  <text class="col" x="34" y="470">CADENCE</text>
+  <text class="sub2" x="34" y="492">monthly &mdash; geometry</text>
+  <text class="sub2" x="34" y="509">15&ndash;30s &mdash; vehicles</text>
+  <text class="sub2" x="34" y="526">5 min &mdash; city switch</text>
+
+  <text class="sub2" x="286" y="524">Adding a city = one JSON file in <tspan class="amber">cities/</tspan>. No code, no deploy pipeline change.</text>
+  <text class="sub2" x="286" y="546">Static and Realtime never call each other &mdash; artifact version id is the only coupling.</text>
+</svg>
+</div>
+
+<h3 style="margin-top:24px">Does this hold up?</h3>
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Looks right &mdash; continue</h3>
+      <p>Move on to Section 2: data flow, the wire contracts, and rotation behaviour.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Something needs changing</h3>
+      <p>Tell me which box or boundary in the terminal &mdash; component split, the artifact seam, canvas vs SVG, or where a responsibility sits.</p>
+    </div>
+  </div>
+</div>

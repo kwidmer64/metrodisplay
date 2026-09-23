@@ -1,0 +1,8 @@
+.superpowers/
+bin/
+obj/
+node_modules/
+dist/
+.artifacts/
+*.user
+appsettings.*.local.json

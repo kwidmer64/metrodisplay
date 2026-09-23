@@ -1,0 +1,233 @@
+<h2>Clean Architecture, translated from n-layer</h2>
+<p class="subtitle">Same MetroDisplay components in both diagrams. Only one thing actually changes mechanically &mdash; everything else is vocabulary. Find that one thing and the rest stops being mysterious.</p>
+
+<style>
+  .panelrow { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width: 900px) { .panelrow { grid-template-columns:1fr } }
+  .panel { background:#07090c; border:1px solid #1b2230; border-radius:10px; padding:10px; }
+  .panel h4 { color:#e8eef6; font:600 13px ui-monospace,monospace; letter-spacing:.06em; margin:2px 0 4px 4px }
+  .panel .cap { color:#6b7686; font:11px ui-monospace,monospace; margin:0 0 8px 4px }
+  .svgbox { height:430px }
+  .svgbox svg { width:100%; height:100%; display:block }
+  .wide { height:330px }
+  .keyline { background:#0d1218; border:1px solid #2a3647; border-left:3px solid #4ea3ff;
+             border-radius:6px; padding:12px 14px; margin:18px 0 }
+  .keyline b { color:#e8eef6 }
+  table.tx { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px }
+  table.tx th { text-align:left; color:#6b7686; font:600 11px ui-monospace,monospace;
+                letter-spacing:.1em; padding:6px 10px; border-bottom:1px solid #1b2230 }
+  table.tx td { padding:7px 10px; border-bottom:1px solid #131a24; vertical-align:top }
+  table.tx td:first-child { color:#9fb0c4; font-family:ui-monospace,monospace; font-size:12px; width:30% }
+  table.tx td:nth-child(2) { color:#9fb0c4; font-family:ui-monospace,monospace; font-size:12px; width:30% }
+  table.tx td:last-child { color:#7a869a; font-size:12px }
+  code { background:#131a24; padding:1px 5px; border-radius:3px; font-size:12px; color:#9fd0ff }
+</style>
+
+<div class="panelrow">
+
+  <!-- ============ N-LAYER ============ -->
+  <div class="panel">
+    <h4>WHAT YOU KNOW &mdash; n-layer</h4>
+    <p class="cap">A stack. Dependencies point down. DAL is the foundation.</p>
+    <div class="svgbox">
+    <svg viewBox="0 0 440 430" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="dn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#c9a227"/>
+        </marker>
+      </defs>
+      <style>
+        .lay { rx:8; stroke-width:1.3 }
+        .lp { fill:#141d2b; stroke:#3a5372 }
+        .lb { fill:#17201a; stroke:#3d6146 }
+        .ld { fill:#241c14; stroke:#6b512a }
+        .ln2 { fill:#e8eef6; font:600 13px ui-monospace,monospace; letter-spacing:.05em }
+        .it { fill:#8e9bad; font:11px ui-monospace,monospace }
+        .ar { stroke:#c9a227; stroke-width:1.8; fill:none; marker-end:url(#dn) }
+        .arl { fill:#c9a227; font:10.5px ui-monospace,monospace }
+        .foot { fill:#6b7686; font:11px ui-monospace,monospace }
+      </style>
+
+      <rect class="lay lp" x="40" y="28" width="360" height="92"/>
+      <text class="ln2" x="58" y="52">PRESENTATION</text>
+      <text class="it" x="58" y="72">StreamEndpoint (SSE) · HealthEndpoint</text>
+      <text class="it" x="58" y="89">SseMessageWriter · mappers</text>
+      <text class="it" x="58" y="106">web/ canvas renderer</text>
+
+      <path class="ar" d="M220,124 L220,152"/>
+      <text class="arl" x="232" y="143">references</text>
+
+      <rect class="lay lb" x="40" y="156" width="360" height="106"/>
+      <text class="ln2" x="58" y="180">BUSINESS</text>
+      <text class="it" x="58" y="200">MercatorProjector · PolylineClipper</text>
+      <text class="it" x="58" y="217">NetworkArtifactBuilder · ShapeDeduplicator</text>
+      <text class="it" x="58" y="234">VehicleShapeMatcher · RotationScheduler</text>
+      <text class="it" x="58" y="251">FeedHealthEvaluator</text>
+
+      <path class="ar" d="M220,266 L220,294"/>
+      <text class="arl" x="232" y="285">references</text>
+
+      <rect class="lay ld" x="40" y="298" width="360" height="92"/>
+      <text class="ln2" x="58" y="322">DATA ACCESS</text>
+      <text class="it" x="58" y="342">StaticGtfsFeedClient · RealtimeFeedClient</text>
+      <text class="it" x="58" y="359">FileArtifactRepository</text>
+      <text class="it" x="58" y="376">CityConfigRepository</text>
+
+      <text class="foot" x="40" y="412">Bottom = foundation. Everything rests on Data Access.</text>
+    </svg>
+    </div>
+  </div>
+
+  <!-- ============ CLEAN ============ -->
+  <div class="panel">
+    <h4>CLEAN ARCHITECTURE</h4>
+    <p class="cap">Rings. Dependencies point inward. DAL is on the <i>outside</i>.</p>
+    <div class="svgbox">
+    <svg viewBox="0 0 440 430" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="inw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="#c9a227"/>
+        </marker>
+      </defs>
+      <style>
+        .r4 { fill:#1a1410; stroke:#6b512a; stroke-width:1.3 }
+        .r3 { fill:#141d2b; stroke:#3a5372; stroke-width:1.3 }
+        .r2 { fill:#15201c; stroke:#3d6146; stroke-width:1.3 }
+        .r1 { fill:#1c2119; stroke:#5c7a4a; stroke-width:1.4 }
+        .rl { fill:#cfd8e4; font:600 10.5px ui-monospace,monospace; letter-spacing:.08em }
+        .ri { fill:#8e9bad; font:10px ui-monospace,monospace }
+        .rc { fill:#e8eef6; font:600 11.5px ui-monospace,monospace }
+        .ari { stroke:#c9a227; stroke-width:1.8; fill:none; marker-end:url(#inw) }
+        .arl2 { fill:#c9a227; font:10.5px ui-monospace,monospace }
+        .foot2 { fill:#6b7686; font:11px ui-monospace,monospace }
+      </style>
+
+      <circle class="r4" cx="220" cy="200" r="182"/>
+      <circle class="r3" cx="220" cy="200" r="140"/>
+      <circle class="r2" cx="220" cy="200" r="96"/>
+      <circle class="r1" cx="220" cy="200" r="52"/>
+
+      <text class="rl" x="220" y="42" text-anchor="middle">FRAMEWORKS &amp; DRIVERS</text>
+      <text class="ri" x="220" y="57" text-anchor="middle">ASP.NET · HttpClient · protobuf · file system</text>
+
+      <text class="rl" x="220" y="86" text-anchor="middle">INTERFACE ADAPTERS</text>
+      <text class="ri" x="220" y="100" text-anchor="middle">FileArtifactRepository · feed clients</text>
+      <text class="ri" x="220" y="113" text-anchor="middle">SseMessageWriter · mappers</text>
+
+      <text class="rl" x="220" y="138" text-anchor="middle">USE CASES</text>
+      <text class="ri" x="220" y="152" text-anchor="middle">NetworkArtifactBuilder</text>
+      <text class="ri" x="220" y="165" text-anchor="middle">RotationScheduler</text>
+
+      <text class="rc" x="220" y="196" text-anchor="middle">ENTITIES</text>
+      <text class="ri" x="220" y="211" text-anchor="middle">RailNetwork</text>
+      <text class="ri" x="220" y="224" text-anchor="middle">MercatorProjector</text>
+
+      <path class="ari" d="M60,320 L150,250"/>
+      <path class="ari" d="M380,320 L290,250"/>
+      <text class="arl2" x="34" y="340">dependencies</text>
+      <text class="arl2" x="322" y="340">point inward</text>
+
+      <text class="foot2" x="24" y="392">Presentation and Data Access are the same kind of thing:</text>
+      <text class="foot2" x="24" y="408">both are adapters to the outside world. Neither is a foundation.</text>
+    </svg>
+    </div>
+  </div>
+</div>
+
+<div class="keyline">
+  <b>The one mechanical difference.</b> In n-layer, <code>Business</code> has a project reference to
+  <code>DataAccess</code>. In Clean, that arrow is flipped: <code>Business</code> declares
+  <code>IArtifactRepository</code> and <code>DataAccess</code> references <i>Business</i> to implement it.
+  Nothing else in the diagram is enforced by the compiler. Everything else &mdash; ring names, four
+  layers instead of three, "entities" vs "domain models" &mdash; is vocabulary.
+</div>
+
+<h3>Why that flip is the whole point: flow &ne; dependency</h3>
+<p class="subtitle">The confusion almost everyone hits coming from n-layer: at runtime the call still goes Business &rarr; database. It's the <i>compile-time reference</i> that reverses, not the call.</p>
+
+<div class="panel" style="margin-top:10px">
+  <div class="svgbox wide">
+  <svg viewBox="0 0 1000 330" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" fill="#57e0a0"/>
+      </marker>
+      <marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" fill="#ff9f43"/>
+      </marker>
+    </defs>
+    <style>
+      .bx2 { rx:7; stroke-width:1.3; fill:#0d1218; stroke:#2a3647 }
+      .bt { fill:#e8eef6; font:600 12.5px ui-monospace,monospace }
+      .bs { fill:#7a869a; font:10.5px ui-monospace,monospace }
+      .flow { stroke:#57e0a0; stroke-width:2; fill:none; marker-end:url(#f1) }
+      .dep  { stroke:#ff9f43; stroke-width:2; fill:none; marker-end:url(#f2); stroke-dasharray:6 4 }
+      .fl { fill:#57e0a0; font:11px ui-monospace,monospace }
+      .dl { fill:#ff9f43; font:11px ui-monospace,monospace }
+      .iface { fill:#101a24; stroke:#4ea3ff; stroke-width:1.4; rx:6 }
+      .it2 { fill:#9fd0ff; font:600 11.5px ui-monospace,monospace }
+    </style>
+
+    <rect class="bx2" x="40" y="120" width="210" height="72"/>
+    <text class="bt" x="58" y="148">RotationScheduler</text>
+    <text class="bs" x="58" y="167">Business / Use Case</text>
+    <text class="bs" x="58" y="182">"give me artifact mbta@..."</text>
+
+    <rect class="iface" x="330" y="120" width="200" height="72"/>
+    <text class="it2" x="348" y="148">IArtifactRepository</text>
+    <text class="bs" x="348" y="167">declared IN Business</text>
+    <text class="bs" x="348" y="182">the boundary itself</text>
+
+    <rect class="bx2" x="610" y="120" width="230" height="72"/>
+    <text class="bt" x="628" y="148">FileArtifactRepository</text>
+    <text class="bs" x="628" y="167">Data Access / Adapter</text>
+    <text class="bs" x="628" y="182">reads bytes off disk</text>
+
+    <path class="flow" d="M250,144 L324,144"/>
+    <path class="flow" d="M530,144 L604,144"/>
+    <text class="fl" x="250" y="112">RUNTIME CALL &rarr; still goes left to right, same as n-layer</text>
+
+    <path class="dep" d="M700,206 C700,256 560,250 536,180"/>
+    <text class="dl" x="470" y="276">COMPILE-TIME REFERENCE &larr; DataAccess references Business, not the reverse</text>
+
+    <text class="bs" x="40" y="308">Consequence: Business can be compiled, and fully tested, with no file system, no HttpClient, no ASP.NET in the project at all.</text>
+  </svg>
+  </div>
+</div>
+
+<h3>Vocabulary translation</h3>
+<table class="tx">
+  <tr><th>Your term</th><th>Clean term</th><th>Note</th></tr>
+  <tr><td>Presentation Layer</td><td>Interface Adapters (+ Frameworks)</td><td>Controllers/endpoints are adapters; ASP.NET itself is the outer ring</td></tr>
+  <tr><td>Business Layer</td><td>Use Cases + Entities</td><td>Split in two: orchestration vs. rules that would be true with no app at all</td></tr>
+  <tr><td>Data Access Layer</td><td>Interface Adapters (+ Frameworks)</td><td>Same ring as Presentation &mdash; this is the surprising part</td></tr>
+  <tr><td>Business Entities / POCOs</td><td>Entities</td><td>Nearly identical idea</td></tr>
+  <tr><td>DTOs</td><td>Boundary models / request&ndash;response models</td><td>Belong to the adapter ring, not the core</td></tr>
+  <tr><td>Repository in DAL</td><td>Interface in core, impl in adapters</td><td>The one real structural change</td></tr>
+  <tr><td>"Everything rests on the database"</td><td>"The database is a detail"</td><td>The philosophical claim, and the actual payoff</td></tr>
+</table>
+
+<h3>Does MetroDisplay need it?</h3>
+<div class="options">
+  <div class="option" data-choice="pragmatic" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>n-layer naming + invert only the repository seam &mdash; recommended</h3>
+      <p>Keep the three familiar layer names. Flip exactly one arrow: <code>IArtifactRepository</code> declared in Business. That buys the disk&rarr;blob swap and I/O-free Business tests, at the cost of one interface.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="full" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Full Clean, four rings</h3>
+      <p>Entities separated from use cases, boundary models distinct from domain models, mapping at every crossing. Pays off on large teams and long-lived domains; noticeable ceremony for a solo display app.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="none" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Straight n-layer, no inversion</h3>
+      <p>Business references DataAccess directly. Simplest, most familiar, and fine &mdash; but the deferred blob-storage item in &sect;15 stops being free, and Business tests need real or faked file I/O.</p>
+    </div>
+  </div>
+</div>

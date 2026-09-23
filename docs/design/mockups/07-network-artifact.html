@@ -1,0 +1,137 @@
+<h2>NetworkArtifact &amp; the artifact store</h2>
+<p class="subtitle">An artifact is a <i>build output</i>, not a database record. Closest thing in your world: a materialized view, or a compiled binary. It is derived, immutable, versioned, and always reproducible from its source.</p>
+
+<style>
+  .panel { background:#07090c; border:1px solid #1b2230; border-radius:10px; padding:10px; margin-bottom:16px }
+  .panel h4 { color:#e8eef6; font:600 13px ui-monospace,monospace; letter-spacing:.06em; margin:2px 0 8px 4px }
+  .box1 { height:400px } .box2 { height:470px }
+  .panel svg { width:100%; height:100%; display:block }
+</style>
+
+<div class="panel">
+  <h4>WHAT IS INSIDE ONE, AND WHO READS IT</h4>
+  <div class="box1">
+  <svg viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" fill="#5d6b7d"/>
+      </marker>
+      <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" fill="#4ea3ff"/>
+      </marker>
+    </defs>
+    <style>
+      .bx { rx:7; fill:#0d1218; stroke:#2a3647; stroke-width:1.3 }
+      .src { fill:#0b0f14; stroke:#4a3d28; stroke-dasharray:4 3 }
+      .art { fill:#101722; stroke:#3d5madeup }
+      .tt { fill:#e8eef6; font:600 12.5px ui-monospace,monospace }
+      .ss { fill:#7a869a; font:10.5px ui-monospace,monospace }
+      .sss { fill:#5d6b7d; font:10px ui-monospace,monospace }
+      .ln { stroke:#5d6b7d; stroke-width:1.5; fill:none; marker-end:url(#ar1) }
+      .lnb { stroke:#4ea3ff; stroke-width:1.6; fill:none; marker-end:url(#ar2) }
+      .cad { fill:#8e9bad; font:10.5px ui-monospace,monospace }
+      .cadb { fill:#7fb6f0; font:10.5px ui-monospace,monospace }
+      .hdr { fill:#9fb0c4; font:600 10.5px ui-monospace,monospace; letter-spacing:.1em }
+    </style>
+
+    <!-- source -->
+    <rect class="bx src" x="24" y="140" width="168" height="94"/>
+    <text class="tt" x="40" y="166">MBTA_GTFS.zip</text>
+    <text class="ss" x="40" y="186">~50 MB, mostly bus</text>
+    <text class="ss" x="40" y="202">1000s of near-dup shapes</text>
+    <text class="ss" x="40" y="218">raw lat/lon CSV</text>
+    <text class="hdr" x="24" y="128">SOURCE</text>
+
+    <path class="ln" d="M192,187 L246,187"/>
+    <text class="cad" x="196" y="178">build</text>
+
+    <!-- artifact -->
+    <rect class="bx" x="252" y="56" width="330" height="290" style="stroke:#3d5a7a"/>
+    <text class="hdr" x="252" y="44">ARTIFACT &mdash; immutable, versioned</text>
+    <text class="tt" x="270" y="84">NetworkArtifact</text>
+    <text class="sss" x="270" y="101">mbta@2026-09-01.a3f1</text>
+
+    <rect class="bx" x="270" y="116" width="294" height="72" style="fill:#0a1119"/>
+    <text class="tt" x="286" y="138" style="font-size:11.5px">scene payload</text>
+    <text class="ss" x="286" y="156">lines, shapes as normalized points,</text>
+    <text class="ss" x="286" y="172">stations, edgeLabels, aspect</text>
+
+    <rect class="bx" x="270" y="198" width="294" height="60" style="fill:#0a1119"/>
+    <text class="tt" x="286" y="220" style="font-size:11.5px">trip index</text>
+    <text class="ss" x="286" y="238">trip_id &rarr; shape_id, route &rarr; primary shape</text>
+
+    <rect class="bx" x="270" y="268" width="294" height="62" style="fill:#0a1119"/>
+    <text class="tt" x="286" y="290" style="font-size:11.5px">manifest</text>
+    <text class="ss" x="286" y="308">version, source ETag, feed_end_date,</text>
+    <text class="ss" x="286" y="322">built-at, city id</text>
+
+    <!-- consumers -->
+    <path class="lnb" d="M582,150 C640,150 650,120 706,116"/>
+    <path class="lnb" d="M582,228 C640,228 650,258 706,264"/>
+
+    <rect class="bx" x="712" y="76" width="264" height="86"/>
+    <text class="tt" x="730" y="102">Server</text>
+    <text class="ss" x="730" y="122">ships scene payload verbatim</text>
+    <text class="ss" x="730" y="138">as the `network` SSE message</text>
+    <text class="sss" x="730" y="154">reads · never writes</text>
+
+    <rect class="bx" x="712" y="224" width="264" height="104"/>
+    <text class="tt" x="730" y="250">Realtime</text>
+    <text class="ss" x="730" y="270">trip index &rarr; resolve trip to shape</text>
+    <text class="ss" x="730" y="286">shape points &rarr; compute</text>
+    <text class="ss" x="730" y="302">shapeFraction per vehicle</text>
+    <text class="sss" x="730" y="320">reads · never writes</text>
+
+    <text class="hdr" x="712" y="60">CONSUMERS</text>
+  </svg>
+  </div>
+</div>
+
+<div class="panel">
+  <h4>LIFECYCLE &mdash; WHY VERSIONING IS LOAD-BEARING</h4>
+  <div class="box2">
+  <svg viewBox="0 0 1000 470" preserveAspectRatio="xMidYMid meet">
+    <style>
+      .stp { rx:6; fill:#0d1218; stroke:#2a3647; stroke-width:1.2 }
+      .num { fill:#4ea3ff; font:600 13px ui-monospace,monospace }
+      .h2t { fill:#e8eef6; font:600 12.5px ui-monospace,monospace }
+      .b2 { fill:#7a869a; font:11px ui-monospace,monospace }
+      .g { fill:#57e0a0; font:11px ui-monospace,monospace }
+      .a { fill:#ff9f43; font:11px ui-monospace,monospace }
+      .rail { stroke:#1f2835; stroke-width:2 }
+    </style>
+
+    <line class="rail" x1="52" y1="40" x2="52" y2="430"/>
+
+    <circle cx="52" cy="58" r="5" fill="#4ea3ff"/>
+    <text class="h2t" x="76" y="52">Boot</text>
+    <text class="b2" x="76" y="70">Server asks the store for MBTA's latest artifact. Nothing there.</text>
+    <text class="b2" x="76" y="86">Gtfs.Static fetches the zip, runs the pipeline, calls PutAsync.</text>
+    <text class="g" x="76" y="102">&rarr; mbta@2026-09-01.a3f1 now exists</text>
+
+    <circle cx="52" cy="140" r="5" fill="#4ea3ff"/>
+    <text class="h2t" x="76" y="134">Serve</text>
+    <text class="b2" x="76" y="152">Server holds it in memory, sends the scene payload as `network`.</text>
+    <text class="b2" x="76" y="168">Realtime holds the same artifact and uses its trip index every poll.</text>
+
+    <circle cx="52" cy="206" r="5" fill="#5d6b7d"/>
+    <text class="h2t" x="76" y="200">Next day &mdash; conditional GET</text>
+    <text class="b2" x="76" y="218">Agency returns 304 Not Modified. Zero bytes, zero work, no new artifact.</text>
+    <text class="b2" x="76" y="234">Repeats daily. Most days nothing happens at all.</text>
+
+    <circle cx="52" cy="272" r="5" fill="#ff9f43"/>
+    <text class="h2t" x="76" y="266">Three weeks later &mdash; 200 OK, new feed</text>
+    <text class="b2" x="76" y="284">Pipeline runs. Validator checks it contains rail shapes.</text>
+    <text class="a" x="76" y="300">If zero shapes &rarr; REJECT, keep serving the old artifact. A broken</text>
+    <text class="a" x="76" y="316">agency publish cannot blank the wall.</text>
+    <text class="g" x="76" y="332">Otherwise &rarr; mbta@2026-09-22.7c02. The old one is NOT deleted.</text>
+
+    <circle cx="52" cy="370" r="5" fill="#ff9f43"/>
+    <text class="h2t" x="76" y="364">Swap &mdash; but not mid-dwell</text>
+    <text class="b2" x="76" y="382">Displays are mid-rotation on Boston, drawing shapes from ...a3f1.</text>
+    <text class="b2" x="76" y="398">Swapping now would leave `frame` messages referencing shape ids</text>
+    <text class="b2" x="76" y="414">that the displayed `network` has never heard of &rarr; every train vanishes.</text>
+    <text class="g" x="76" y="430">So the swap waits for the next switch to Boston: `network` first, then frames.</text>
+  </svg>
+  </div>
+</div>

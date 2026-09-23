@@ -1,0 +1,170 @@
+<h2>Where does the information live?</h2>
+<p class="subtitle">You said art-first but info-dense. That tension is resolved by <i>layout</i>: how much screen the chrome takes, and whether it sits inside or beside the map. All three show identical data, arranged differently. Assume 1920&times;1080 now, something like 800&times;480 on the eventual panel.</p>
+
+<style>
+  .cards .card-image { display:block !important; padding:0; background:#07090c; aspect-ratio:16/10; }
+  .frame { width:100%; height:100%; background:#07090c; position:relative; display:flex; color:#c9d2de; font-size:9px; overflow:hidden; }
+  .net { position:relative; flex:1 1 auto; min-width:0; height:100%; }
+  .net > svg { position:absolute; left:0; top:0; right:0; bottom:0; width:100%; height:100%; display:block; }
+  .ov { position:absolute; font-family:ui-monospace,monospace; letter-spacing:.06em; z-index:2 }
+  .city { font-size:13px; font-weight:600; color:#f2f6fb; letter-spacing:.04em }
+  .dim { color:#6b7686 }
+  .sidebar { flex:0 0 31%; border-left:1px solid #1b2230; padding:9px 8px; display:flex; flex-direction:column; gap:6px; font-family:ui-monospace,monospace; }
+  .rail { position:absolute; left:0; right:0; bottom:0; height:38px; border-top:1px solid #1b2230; display:flex; align-items:center; gap:12px; padding:0 10px; font-family:ui-monospace,monospace; z-index:2; background:#07090c }
+  .lrow { display:flex; align-items:center; gap:5px; white-space:nowrap }
+  .sw { width:12px; height:3px; border-radius:2px; flex:none; display:inline-block }
+  .prog { height:3px; background:#1b2230; border-radius:2px; overflow:hidden; }
+  .prog > i { display:block; height:100%; background:#3d4a5c }
+  .meta { font-size:12px; line-height:1.5; opacity:.75; margin-top:6px }
+  .meta b { opacity:1 }
+  .trk { fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; opacity:.5 }
+  .stn { fill:#07090c; stroke:#69747f; stroke-width:1 }
+  .veh { fill:#fff }
+  .vg { fill:#fff; opacity:.16 }
+</style>
+
+<div class="cards">
+
+  <div class="card" data-choice="fullbleed" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="frame">
+        <div class="net">
+          <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+            <path class="trk" stroke="#57e0a0" d="M14,104 L86,110 L150,108 L228,103 L306,116"/>
+            <path class="trk" stroke="#ff9f43" d="M36,42 L76,70 L116,100 L160,130 L204,158 L238,180"/>
+            <path class="trk" stroke="#4ea3ff" d="M24,176 L64,138 L106,118 L154,96 L198,66 L250,48 L300,32"/>
+            <g class="stn">
+              <circle cx="24" cy="176" r="2.4"/><circle cx="106" cy="118" r="2.4"/><circle cx="198" cy="66" r="2.4"/>
+              <circle cx="300" cy="32" r="2.4"/><circle cx="36" cy="42" r="2.4"/><circle cx="116" cy="100" r="2.4"/>
+              <circle cx="238" cy="180" r="2.4"/><circle cx="14" cy="104" r="2.4"/><circle cx="150" cy="108" r="2.4"/>
+              <circle cx="306" cy="116" r="2.4"/>
+            </g>
+            <circle class="vg" cx="64" cy="138" r="6.5"/><circle class="veh" cx="64" cy="138" r="2.6"/>
+            <circle class="vg" cx="224" cy="56" r="6.5"/><circle class="veh" cx="224" cy="56" r="2.6"/>
+            <circle class="vg" cx="182" cy="144" r="6.5"/><circle class="veh" cx="182" cy="144" r="2.6"/>
+            <circle class="vg" cx="228" cy="103" r="6.5"/><circle class="veh" cx="228" cy="103" r="2.6"/>
+            <circle class="vg" cx="86" cy="110" r="6.5"/><circle class="veh" cx="86" cy="110" r="2.6"/>
+          </svg>
+          <div class="ov" style="top:10px;left:12px">
+            <div class="city">BOSTON</div>
+            <div class="dim" style="margin-top:3px">MBTA &middot; RAPID TRANSIT</div>
+          </div>
+          <div class="ov dim" style="top:11px;right:12px;text-align:right">
+            <div style="color:#c9d2de">14:32:07</div>
+            <div style="margin-top:3px">147 ACTIVE</div>
+          </div>
+          <div class="ov dim" style="bottom:11px;left:12px;display:flex;gap:12px">
+            <span class="lrow"><i class="sw" style="background:#4ea3ff"></i>RED</span>
+            <span class="lrow"><i class="sw" style="background:#ff9f43"></i>ORANGE</span>
+            <span class="lrow"><i class="sw" style="background:#57e0a0"></i>GREEN</span>
+          </div>
+          <div class="ov" style="bottom:13px;right:12px;width:78px">
+            <div class="prog"><i style="width:62%"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A &mdash; Full bleed, corner overlays</h3>
+      <p>Map owns 100% of the screen. Four tiny corner blocks: city, clock + vehicle count, line legend, rotation progress.</p>
+      <p class="meta"><b>Art:</b> strongest &mdash; nothing competes with the network.<br>
+      <b>Info ceiling:</b> low. No room for per-line detail, alerts, or delays.<br>
+      <b>Small panel:</b> best &mdash; degrades to 480px wide by dropping corners.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="sidebar" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="frame">
+        <div class="net">
+          <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+            <path class="trk" stroke="#57e0a0" d="M14,104 L86,110 L150,108 L228,103 L306,116"/>
+            <path class="trk" stroke="#ff9f43" d="M36,42 L76,70 L116,100 L160,130 L204,158 L238,180"/>
+            <path class="trk" stroke="#4ea3ff" d="M24,176 L64,138 L106,118 L154,96 L198,66 L250,48 L300,32"/>
+            <g class="stn">
+              <circle cx="24" cy="176" r="2.4"/><circle cx="106" cy="118" r="2.4"/><circle cx="198" cy="66" r="2.4"/>
+              <circle cx="300" cy="32" r="2.4"/><circle cx="36" cy="42" r="2.4"/><circle cx="116" cy="100" r="2.4"/>
+              <circle cx="238" cy="180" r="2.4"/><circle cx="14" cy="104" r="2.4"/><circle cx="150" cy="108" r="2.4"/>
+              <circle cx="306" cy="116" r="2.4"/>
+            </g>
+            <circle class="vg" cx="64" cy="138" r="6.5"/><circle class="veh" cx="64" cy="138" r="2.6"/>
+            <circle class="vg" cx="224" cy="56" r="6.5"/><circle class="veh" cx="224" cy="56" r="2.6"/>
+            <circle class="vg" cx="182" cy="144" r="6.5"/><circle class="veh" cx="182" cy="144" r="2.6"/>
+            <circle class="vg" cx="228" cy="103" r="6.5"/><circle class="veh" cx="228" cy="103" r="2.6"/>
+            <circle class="vg" cx="86" cy="110" r="6.5"/><circle class="veh" cx="86" cy="110" r="2.6"/>
+          </svg>
+          <div class="ov" style="top:10px;left:12px">
+            <div class="city">BOSTON</div>
+            <div class="dim" style="margin-top:3px">MBTA</div>
+          </div>
+        </div>
+        <div class="sidebar">
+          <div class="dim" style="font-size:8px">14:32:07 EST</div>
+          <div class="lrow" style="justify-content:space-between"><span class="lrow"><i class="sw" style="background:#4ea3ff"></i>RED</span><span>41</span></div>
+          <div class="prog"><i style="width:78%;background:#4ea3ff"></i></div>
+          <div class="lrow" style="justify-content:space-between"><span class="lrow"><i class="sw" style="background:#ff9f43"></i>ORANGE</span><span>28</span></div>
+          <div class="prog"><i style="width:55%;background:#ff9f43"></i></div>
+          <div class="lrow" style="justify-content:space-between"><span class="lrow"><i class="sw" style="background:#57e0a0"></i>GREEN</span><span>63</span></div>
+          <div class="prog"><i style="width:91%;background:#57e0a0"></i></div>
+          <div style="margin-top:auto">
+            <div class="dim" style="font-size:8px">ALERT</div>
+            <div style="font-size:8px;color:#ff9f43;line-height:1.4">ORANGE: shuttle<br>Oak Grove&ndash;Malden</div>
+          </div>
+          <div class="prog" style="margin-top:5px"><i style="width:62%"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B &mdash; Map + data sidebar</h3>
+      <p>Map keeps ~69%. Sidebar carries per-line vehicle count, a service bar, and the current alert.</p>
+      <p class="meta"><b>Art:</b> good, but the fixed rectangle fights the map's organic shape.<br>
+      <b>Info ceiling:</b> high &mdash; room for delays, headways, next-train.<br>
+      <b>Small panel:</b> weak &mdash; a sidebar on 800&times;480 leaves the map too narrow; needs a separate layout.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="frame">
+        <div class="net">
+          <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet" style="bottom:38px;height:auto">
+            <path class="trk" stroke="#57e0a0" d="M14,104 L86,110 L150,108 L228,103 L306,116"/>
+            <path class="trk" stroke="#ff9f43" d="M36,42 L76,70 L116,100 L160,130 L204,158 L238,180"/>
+            <path class="trk" stroke="#4ea3ff" d="M24,176 L64,138 L106,118 L154,96 L198,66 L250,48 L300,32"/>
+            <g class="stn">
+              <circle cx="24" cy="176" r="2.4"/><circle cx="106" cy="118" r="2.4"/><circle cx="198" cy="66" r="2.4"/>
+              <circle cx="300" cy="32" r="2.4"/><circle cx="36" cy="42" r="2.4"/><circle cx="116" cy="100" r="2.4"/>
+              <circle cx="238" cy="180" r="2.4"/><circle cx="14" cy="104" r="2.4"/><circle cx="150" cy="108" r="2.4"/>
+              <circle cx="306" cy="116" r="2.4"/>
+            </g>
+            <circle class="vg" cx="64" cy="138" r="6.5"/><circle class="veh" cx="64" cy="138" r="2.6"/>
+            <circle class="vg" cx="224" cy="56" r="6.5"/><circle class="veh" cx="224" cy="56" r="2.6"/>
+            <circle class="vg" cx="182" cy="144" r="6.5"/><circle class="veh" cx="182" cy="144" r="2.6"/>
+            <circle class="vg" cx="228" cy="103" r="6.5"/><circle class="veh" cx="228" cy="103" r="2.6"/>
+            <circle class="vg" cx="86" cy="110" r="6.5"/><circle class="veh" cx="86" cy="110" r="2.6"/>
+          </svg>
+          <div class="ov" style="top:10px;left:12px">
+            <div class="city">BOSTON</div>
+            <div class="dim" style="margin-top:3px">MBTA &middot; 147 ACTIVE</div>
+          </div>
+          <div class="ov dim" style="top:11px;right:12px">14:32:07</div>
+          <div class="rail">
+            <span class="lrow"><i class="sw" style="background:#4ea3ff"></i>RED <b style="color:#f2f6fb">41</b></span>
+            <span class="lrow"><i class="sw" style="background:#ff9f43"></i>ORG <b style="color:#f2f6fb">28</b></span>
+            <span class="lrow"><i class="sw" style="background:#57e0a0"></i>GRN <b style="color:#f2f6fb">63</b></span>
+            <span class="dim" style="flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:clip">&#9888; ORANGE shuttle Oak Grove&ndash;Malden &middot; GREEN 8 min delays &middot;</span>
+            <span style="flex:0 0 46px"><span class="prog" style="display:block"><i style="width:62%"></i></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C &mdash; Map + bottom rail <span class="label">recommended</span></h3>
+      <p>Map keeps ~81% and stays full-width. One dense monospace strip along the bottom holds counts plus a slow alert ticker.</p>
+      <p class="meta"><b>Art:</b> near-A &mdash; the map still reads as the whole image from across the room.<br>
+      <b>Info ceiling:</b> good &mdash; a full-width strip holds a lot, and the ticker scales to any alert volume.<br>
+      <b>Small panel:</b> best of the info-dense options &mdash; a wide short strip is exactly what a 800&times;480 panel can spare.</p>
+    </div>
+  </div>
+
+</div>

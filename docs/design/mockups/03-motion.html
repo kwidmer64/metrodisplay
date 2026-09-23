@@ -1,0 +1,102 @@
+<h2>How do the vehicles move?</h2>
+<p class="subtitle">GTFS-RT feeds refresh every 15&ndash;30s. The feed gives you a position <i>that is already a few seconds stale</i>. What you do between polls is the difference between "a data readout" and "a living thing on the wall". Watch all three &mdash; they use the same made-up feed at the same update rate.</p>
+
+<style>
+  .cards .card-image { display:block !important; padding:0; background:#07090c; aspect-ratio:16/10; }
+  .frame { width:100%; height:100%; background:#07090c; position:relative; overflow:hidden; }
+  .frame > svg { position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
+  .tag { position:absolute; bottom:9px; left:11px; font-family:ui-monospace,monospace; font-size:9px; letter-spacing:.06em; color:#6b7686; z-index:2 }
+  .pulse { position:absolute; top:9px; right:11px; font-family:ui-monospace,monospace; font-size:9px; color:#6b7686; z-index:2 }
+  .pulse i { display:inline-block; width:5px; height:5px; border-radius:50%; background:#57e0a0; margin-right:4px; animation: blip 2.4s linear infinite }
+  @keyframes blip { 0%,6%{opacity:1} 20%,100%{opacity:.15} }
+
+  .trk { fill:none; stroke:#4ea3ff; stroke-width:2.4; stroke-linecap:round; opacity:.45 }
+  .stn { fill:#07090c; stroke:#69747f; stroke-width:1 }
+
+  .dot { offset-path: path("M18,118 C70,40 120,150 176,96 S250,34 306,78"); offset-rotate:0deg; }
+  .snap   { animation: run 12s steps(6, end) infinite; }
+  .smooth { animation: run 12s linear infinite; }
+  .ghost  { animation: run 12s linear infinite; animation-delay:-0.9s; }
+  @keyframes run { from { offset-distance:0% } to { offset-distance:100% } }
+
+  .meta { font-size:12px; line-height:1.5; opacity:.75; margin-top:6px }
+  .meta b { opacity:1 }
+</style>
+
+<div class="cards">
+
+  <div class="card" data-choice="snap" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="frame">
+        <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+          <path class="trk" d="M18,118 C70,40 120,150 176,96 S250,34 306,78"/>
+          <g class="stn"><circle cx="18" cy="118" r="2.4"/><circle cx="176" cy="96" r="2.4"/><circle cx="306" cy="78" r="2.4"/></g>
+          <g class="dot snap"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+          <g class="dot snap" style="animation-delay:-4s"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+          <g class="dot snap" style="animation-delay:-8s"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+        </svg>
+        <div class="pulse"><i></i>POLL</div>
+        <div class="tag">RAW &mdash; redraw on each poll</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A &mdash; Snap to feed</h3>
+      <p>Draw exactly what the feed says. Dot teleports every poll, then sits still.</p>
+      <p class="meta"><b>Truthful:</b> completely &mdash; never shows a position no agency reported.<br>
+      <b>Art:</b> poor. A static screen that twitches every 20s reads as broken, not alive.<br>
+      <b>Cost:</b> zero. This is the free option.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="tween" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="frame">
+        <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+          <path class="trk" d="M18,118 C70,40 120,150 176,96 S250,34 306,78"/>
+          <g class="stn"><circle cx="18" cy="118" r="2.4"/><circle cx="176" cy="96" r="2.4"/><circle cx="306" cy="78" r="2.4"/></g>
+          <g class="dot smooth"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+          <g class="dot smooth" style="animation-delay:-4s"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+          <g class="dot smooth" style="animation-delay:-8s"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+        </svg>
+        <div class="pulse"><i></i>POLL</div>
+        <div class="tag">TWEEN &mdash; glide last &rarr; current</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B &mdash; Tween between polls <span class="label">recommended</span></h3>
+      <p>Animate from the previous reported point to the new one over the poll interval, following the track polyline rather than a straight chord.</p>
+      <p class="meta"><b>Truthful:</b> yes, but always ~one interval behind reality &mdash; you're animating history.<br>
+      <b>Art:</b> strong. Continuous motion, no guessing.<br>
+      <b>Cost:</b> low &mdash; needs each vehicle snapped to a distance-along-shape so it glides on rails, not through buildings.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="deadreckon" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="frame">
+        <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+          <path class="trk" d="M18,118 C70,40 120,150 176,96 S250,34 306,78"/>
+          <g class="stn"><circle cx="18" cy="118" r="2.4"/><circle cx="176" cy="96" r="2.4"/><circle cx="306" cy="78" r="2.4"/></g>
+          <g class="dot ghost"><circle r="3" fill="#6b7686"/></g>
+          <g class="dot ghost" style="animation-delay:-4.9s"><circle r="3" fill="#6b7686"/></g>
+          <g class="dot ghost" style="animation-delay:-8.9s"><circle r="3" fill="#6b7686"/></g>
+          <g class="dot smooth"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+          <g class="dot smooth" style="animation-delay:-4s"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+          <g class="dot smooth" style="animation-delay:-8s"><circle r="7" fill="#fff" opacity=".16"/><circle r="3" fill="#fff"/></g>
+        </svg>
+        <div class="pulse"><i></i>POLL</div>
+        <div class="tag">PREDICT &mdash; white = estimated, grey = last reported</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C &mdash; Dead reckoning</h3>
+      <p>Project the vehicle forward from its last point using reported speed/bearing (or scheduled run time), then snap back when the next poll disagrees.</p>
+      <p class="meta"><b>Truthful:</b> partly &mdash; the bright dot is a guess. Grey ghost shows the gap.<br>
+      <b>Art:</b> strongest &mdash; shows where the train <i>is</i>, not where it was.<br>
+      <b>Cost:</b> highest &mdash; many agencies leave speed/bearing empty, so you fall back to schedule; and visible snap-backs when the guess is wrong look worse than B.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:18px">Note: B and C share all the hard machinery &mdash; both need vehicles projected onto a distance-along-shape. C is B plus an extrapolation term, so starting at B and adding C later is cheap. Starting at A and moving to B is not.</p>

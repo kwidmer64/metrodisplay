@@ -1,0 +1,109 @@
+<h2>Section 2 &mdash; One rotation cycle</h2>
+<p class="subtitle">Five minutes on Boston, then the switch. The important bit is what happens at 4:30: the next city's artifact and feed warm up <i>before</i> the cut, so the new map arrives already populated instead of empty-then-filling.</p>
+
+<div style="background:#07090c;border:1px solid #1b2230;border-radius:10px;padding:8px;height:430px">
+<svg viewBox="0 0 1020 430" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block">
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#5d6b7d"/>
+    </marker>
+  </defs>
+  <style>
+    .lane { fill:#0d1218; stroke:#26303d; stroke-width:1.1; rx:5 }
+    .lbl { fill:#7a869a; font:600 11px ui-monospace,monospace; letter-spacing:.1em }
+    .t   { fill:#5d6b7d; font:10.5px ui-monospace,monospace }
+    .tk  { stroke:#26303d; stroke-width:1 }
+    .ev  { fill:#e8eef6; font:11.5px ui-monospace,monospace }
+    .ev2 { fill:#8e9bad; font:10.5px ui-monospace,monospace }
+    .blue { fill:#4ea3ff } .amber { fill:#ff9f43 } .green { fill:#57e0a0 }
+    .bar-b { fill:#1b3category }
+  </style>
+
+  <!-- time axis -->
+  <text class="lbl" x="34" y="30">TIME</text>
+  <g class="t">
+    <text x="150" y="30">0:00</text><text x="330" y="30">1:00</text>
+    <text x="510" y="30">2:00</text><text x="690" y="30">3:00</text>
+    <text x="820" y="30">4:00</text><text x="930" y="30">4:30</text>
+  </g>
+  <g class="tk">
+    <line x1="160" y1="40" x2="160" y2="400"/><line x1="340" y1="40" x2="340" y2="400"/>
+    <line x1="520" y1="40" x2="520" y2="400"/><line x1="700" y1="40" x2="700" y2="400"/>
+    <line x1="830" y1="40" x2="830" y2="400"/>
+    <line x1="940" y1="40" x2="940" y2="400" stroke="#3f5a7a"/>
+    <line x1="994" y1="40" x2="994" y2="400" stroke="#6b4a2a"/>
+  </g>
+
+  <!-- lane 1: network -->
+  <text class="lbl" x="34" y="72">NETWORK</text>
+  <rect class="lane" x="160" y="56" width="834" height="30"/>
+  <circle class="blue" cx="160" cy="71" r="5"/>
+  <text class="ev" x="174" y="75">NetworkScene (Boston)</text>
+  <text class="ev2" x="600" y="75">&mdash; nothing resent for 5 minutes &mdash;</text>
+
+  <!-- lane 2: frames -->
+  <text class="lbl" x="34" y="128">FRAMES</text>
+  <rect class="lane" x="160" y="108" width="834" height="34"/>
+  <g class="green">
+    <circle cx="160" cy="125" r="3.4"/><circle cx="220" cy="125" r="3.4"/><circle cx="280" cy="125" r="3.4"/>
+    <circle cx="340" cy="125" r="3.4"/><circle cx="400" cy="125" r="3.4"/><circle cx="460" cy="125" r="3.4"/>
+    <circle cx="520" cy="125" r="3.4"/><circle cx="580" cy="125" r="3.4"/><circle cx="640" cy="125" r="3.4"/>
+    <circle cx="700" cy="125" r="3.4"/><circle cx="760" cy="125" r="3.4"/><circle cx="820" cy="125" r="3.4"/>
+    <circle cx="880" cy="125" r="3.4"/><circle cx="940" cy="125" r="3.4"/>
+  </g>
+  <text class="ev2" x="174" y="103">VehicleFrame every ~20s &middot; a few hundred bytes &middot; renderer tweens across each gap</text>
+
+  <!-- lane 3: alerts -->
+  <text class="lbl" x="34" y="184">ALERTS</text>
+  <rect class="lane" x="160" y="164" width="834" height="30"/>
+  <circle class="amber" cx="160" cy="179" r="4"/>
+  <circle class="amber" cx="565" cy="179" r="4"/>
+  <text class="ev2" x="174" y="183">polled 60s, sent only on change</text>
+  <text class="ev2" x="580" y="183">alert set changed &rarr; push</text>
+
+  <!-- lane 4: prefetch -->
+  <text class="lbl" x="34" y="240">PREFETCH</text>
+  <rect class="lane" x="160" y="220" width="834" height="30" style="opacity:.5"/>
+  <rect x="940" y="220" width="54" height="30" fill="#14283d" stroke="#3f5a7a" rx="5"/>
+  <text class="ev2" x="700" y="240" text-anchor="end" style="opacity:.6">idle</text>
+  <text class="ev" x="760" y="268" class="ev2" fill="#7fb6f0">4:30 &mdash; warm next city: load artifact, start polling its feed</text>
+
+  <!-- lane 5: switch -->
+  <text class="lbl" x="34" y="316">SWITCH</text>
+  <rect class="lane" x="160" y="296" width="834" height="34"/>
+  <rect x="994" y="296" width="0" height="34"/>
+  <circle cx="994" cy="313" r="6" fill="#ff9f43"/>
+  <text class="ev" x="700" y="317" fill="#ffb870">5:00 &mdash; crossfade &rarr; NetworkScene (DC), first frame already live</text>
+
+  <!-- progress bar illustration -->
+  <text class="lbl" x="34" y="372">ON SCREEN</text>
+  <rect x="160" y="360" width="834" height="8" rx="4" fill="#1b2230"/>
+  <rect x="160" y="360" width="700" height="8" rx="4" fill="#3d4a5c"/>
+  <text class="ev2" x="160" y="392">bottom-rail progress bar = elapsed / dwell, driven by rotation.endsAt in the NetworkScene</text>
+</svg>
+</div>
+
+<h3 style="margin-top:24px">Transition style at the 5:00 cut?</h3>
+<div class="options">
+  <div class="option" data-choice="crossfade" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Crossfade, ~700ms &mdash; recommended</h3>
+      <p>Old network fades out, new fades in. Calm, reads as a slideshow. Cheap on every renderer including a framebuffer.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="cut" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Hard cut</h3>
+      <p>Instant swap. Most "departure board", zero animation cost, but jarring in a dim room.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="morph" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Zoom-out / zoom-in</h3>
+      <p>Pull back from Boston, push into DC, implying a globe. Most striking, but needs both cities' geo anchors and looks wrong when systems differ wildly in extent.</p>
+    </div>
+  </div>
+</div>
