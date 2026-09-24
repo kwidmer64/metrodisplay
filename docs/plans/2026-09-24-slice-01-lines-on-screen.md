@@ -660,7 +660,7 @@ Include wins when both lists are set.
 - The projector's locals are renamed from `x`/`y` to `eastingM`/`northingM` to meet the
   naming rules.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/MercatorProjectorTests.cs`:
 
@@ -757,15 +757,15 @@ The two `PlaneMetresToGround` tests guard this pipeline's subtlest bug. Web Merc
 are not ground metres: they are stretched by `1/cos(latitude)`. Any plane distance reported
 as a real one has to be shrunk back, or Boston reads a third larger than it is.
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~MercatorProjectorTests|FullyQualifiedName~GroundDistanceTests"
 ```
 
-Expected: build error CS0246, `The type or namespace name 'GeoPoint' could not be found`.
+Expected: build error CS0234, `The type or namespace name 'Geometry' does not exist in the namespace 'MetroDisplay.Gtfs.Static'`. This is the first file in that namespace.
 
-- [ ] **Step 3: Write the point types**
+- [x] **Step 3: Write the point types**
 
 `src/MetroDisplay.Gtfs.Static/Geometry/GeoPoint.cs`:
 
@@ -793,7 +793,7 @@ namespace MetroDisplay.Gtfs.Static.Geometry;
 public readonly record struct PlanePoint(double X, double Y);
 ```
 
-- [ ] **Step 4: Write the projector and ground distance**
+- [x] **Step 4: Write the projector and ground distance**
 
 `src/MetroDisplay.Gtfs.Static/Geometry/MercatorProjector.cs`:
 
@@ -876,15 +876,23 @@ public static class GroundDistance
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~MercatorProjectorTests|FullyQualifiedName~GroundDistanceTests"
 ```
 
-Expected: PASS, 8 tests.
+Expected: PASS, 10 tests.
 
-- [ ] **Step 6: Hand off for commit**
+**As built:** a gap analysis after GREEN found that the eight planned tests exercised the
+latitude terms only at the equator. Mercator `Y` was pinned only at 0 and for direction,
+and the haversine `cos(latitude)` factor only ran where cos = 1. Two tests close that:
+`StretchesNorthingWithLatitude` pins `Y` at 42° to 5,160,979.44 (a plain `R * latitude` gives
+4,675,418.61), and `ShortensLongitudeAwayFromTheEquator` pins 0.01° of longitude at 42.35° N
+to 821.78 m (1,111.95 m without the factor). Each was shown to fail against its mutant and
+only that mutant. Later suite totals include both.
+
+- [x] **Step 6: Hand off for commit**
 
 ```
 feat: add Mercator projection and ground distance
@@ -1512,7 +1520,7 @@ Expected: PASS, 15 tests (10 facts, plus 5 cases of the colour theory).
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 48 tests.
+Expected: PASS, 50 tests.
 
 - [ ] **Step 6: Hand off for commit**
 
@@ -2045,7 +2053,7 @@ Expected: PASS, 7 tests.
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 55 tests (48 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
+Expected: PASS, 57 tests (50 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
 
 - [ ] **Step 13: Run it against the real feed**
 
@@ -2486,7 +2494,7 @@ by max(1, aspect) and drew wide maps at a fraction of their size.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 55 tests.
+- `dotnet test MetroDisplay.slnx` passes with 57 tests.
 - `npm test` in `web/` passes with 5 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` both running, `http://localhost:5173` shows Boston's
   eight rail routes in their colours, correctly proportioned, centred with a margin, and
