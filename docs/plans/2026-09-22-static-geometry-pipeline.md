@@ -232,6 +232,8 @@ rename fails here rather than silently in the renderer.
 
 ### Task 2: City config loading with environment interpolation
 
+> **As built:** the loader deserializes with strict options, so a missing required setting or an unknown one throws `JsonException` instead of loading as zero or null. `RouteFilter` is the last `CityConfig` parameter, with a null default, so it stays optional. The placeholder pattern is a `[GeneratedRegex]`. The task has 7 tests instead of 2: the plan's pair, split so each covers one behaviour, plus escaping, missing-setting, unknown-setting and optional-filter cases.
+
 **Files:**
 - Create: `src/MetroDisplay.Contracts/CityConfig.cs`
 - Create: `src/MetroDisplay.Gtfs.Static/Reading/CityConfigLoader.cs`
@@ -242,7 +244,7 @@ rename fails here rather than silently in the renderer.
 - Consumes: `JsonDefaults.Options` (Task 1).
 - Produces: `CityConfig` record; `CityConfigLoader.Load(string json, IReadOnlyDictionary<string, string> environment) -> CityConfig`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```csharp
 using MetroDisplay.Contracts;
@@ -301,7 +303,7 @@ public class CityConfigLoaderTests
 }
 ```
 
-- [ ] **Step 2: Run the test and confirm it fails**
+- [x] **Step 2: Run the test and confirm it fails**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter CityConfigLoaderTests
@@ -309,7 +311,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter CityConfigLoaderTests
 
 Expected: compile error — `CityConfig` does not exist.
 
-- [ ] **Step 3: Write the config records**
+- [x] **Step 3: Write the config records**
 
 `src/MetroDisplay.Contracts/CityConfig.cs`:
 
@@ -346,7 +348,7 @@ public sealed record ExtentConfig(IReadOnlyList<double> Core, double CoreRadiusK
 public sealed record SimplifyConfig(double ToleranceM);
 ```
 
-- [ ] **Step 4: Write the loader**
+- [x] **Step 4: Write the loader**
 
 `src/MetroDisplay.Gtfs.Static/Reading/CityConfigLoader.cs`:
 
@@ -393,7 +395,7 @@ public static class CityConfigLoader
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter CityConfigLoaderTests
@@ -401,7 +403,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter CityConfigLoaderTests
 
 Expected: PASS, 2 tests.
 
-- [ ] **Step 6: Write the real city config**
+- [x] **Step 6: Write the real city config**
 
 `cities/mbta.json` — same shape as the test sample. Leave the realtime URLs as the MBTA's documented endpoints; they are not exercised until Plan 3.
 
@@ -426,7 +428,7 @@ Expected: PASS, 2 tests.
 
 Note: `routeTypes` is `[0, 1]` — light rail and subway. Commuter rail (type 2) sprawls far past a 22 km extent and is excluded for now; revisit once the map is on screen in Plan 2.
 
-- [ ] **Step 7: Hand off for commit**
+- [x] **Step 7: Hand off for commit**
 
 ```
 feat: load city config with environment interpolation
@@ -3324,7 +3326,7 @@ output can be sanity-checked before the renderer exists.
 
 ## Done when
 
-- `dotnet test` passes with 59 tests.
+- `dotnet test` passes with 64 tests.
 - `dotnet run --project src/MetroDisplay.Tools -- build-artifact mbta` writes `.artifacts/mbta/mbta_<date>.<hash>.json`.
 - Running it twice in a row reports `Feed unchanged (304)` the second time.
 - The artifact's `scene` object is byte-identical in shape to spec §8's `network` message, minus `rotation`, which the server adds at send time.

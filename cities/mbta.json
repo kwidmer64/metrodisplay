@@ -1,0 +1,16 @@
+{
+  "id": "mbta",
+  "name": "BOSTON",
+  "agency": "MBTA",
+  "timezone": "America/New_York",
+  "staticFeed": { "url": "https://cdn.mbta.com/MBTA_GTFS.zip" },
+  "realtime": {
+    "vehiclePositions": { "url": "https://cdn.mbta.com/realtime/VehiclePositions.pb", "intervalMs": 15000 },
+    "alerts": { "url": "https://cdn.mbta.com/realtime/Alerts.pb", "intervalMs": 60000 }
+  },
+  "routeTypes": [0, 1],
+  "routeFilter": { "exclude": [] },
+  "extent": { "core": [42.3555, -71.0605], "coreRadiusKm": 22 },
+  "simplify": { "toleranceM": 25 },
+  "dwellMs": 300000
+}
