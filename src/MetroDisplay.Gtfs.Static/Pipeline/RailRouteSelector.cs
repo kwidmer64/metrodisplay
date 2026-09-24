@@ -46,7 +46,7 @@ public static class RailRouteSelector
             routeCandidates = routeCandidates.Where(route => !excluded.Contains(route.RouteId));
         }
 
-        // Convert the routeCandidates to a list, and cast to a HashSet
+        // Convert the routeCandidates to a list, and convert to a HashSet
         List<GtfsRoute> routes = routeCandidates.ToList();
         HashSet<string> routeIds = routes.Select(route => route.RouteId).ToHashSet(StringComparer.Ordinal);
 
