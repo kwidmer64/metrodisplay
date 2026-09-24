@@ -485,7 +485,7 @@ column fails with its name instead of reading as empty or zero.
 
 **Changed from Plan 1 Task 4:** only the fixture name and the doc comments.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/RailRouteSelectorTests.cs`:
 
@@ -542,15 +542,15 @@ public class RailRouteSelectorTests
 }
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~RailRouteSelectorTests"
 ```
 
-Expected: build error CS0246, `The type or namespace name 'RailSelection' could not be found`.
+Expected: build error CS0234, `The type or namespace name 'Pipeline' does not exist in the namespace 'MetroDisplay.Gtfs.Static'`. This is the first file in that namespace.
 
-- [ ] **Step 3: Write the selector**
+- [x] **Step 3: Write the selector**
 
 `src/MetroDisplay.Gtfs.Static/Pipeline/RailRouteSelector.cs`:
 
@@ -613,7 +613,7 @@ An `include` list wins outright instead of intersecting with `exclude`. Setting 
 config mistake, and picking one rule predictably is easier to reason about than a silent
 intersection.
 
-- [ ] **Step 4: Run the tests and confirm they pass**
+- [x] **Step 4: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~RailRouteSelectorTests"
@@ -621,7 +621,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~Ra
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Hand off for commit**
+- [x] **Step 5: Hand off for commit**
 
 ```
 feat: select rail routes and their shapes
