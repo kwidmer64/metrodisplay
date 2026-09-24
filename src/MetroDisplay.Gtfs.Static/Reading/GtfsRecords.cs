@@ -19,7 +19,7 @@ public sealed class GtfsRoute
     public string RouteId { get; set; } = "";
 
     [Name("route_short_name")]
-    [Optional] 
+    [Optional]
     public string RouteShortName { get; set; } = "";
 
     [Name("route_long_name")]

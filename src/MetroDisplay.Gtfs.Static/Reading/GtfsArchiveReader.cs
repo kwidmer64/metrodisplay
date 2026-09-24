@@ -51,12 +51,12 @@ public static class GtfsArchiveReader
         // Create a StreamReader with the contents of the entry
         using (StreamReader reader = new StreamReader(entry.Open()))
         {
-            using (CsvReader csv = new CsvReader(reader, CsvSettings))
+            using (CsvReader csvReader = new CsvReader(reader, CsvSettings))
             {
                 // Try to match the CSV columns to a TRecord object
                 try
                 {
-                    return csv.GetRecords<TRecord>().ToList();
+                    return csvReader.GetRecords<TRecord>().ToList();
                 }
                 catch (HeaderValidationException exception)
                 {
