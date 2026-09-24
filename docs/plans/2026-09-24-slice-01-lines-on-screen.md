@@ -130,7 +130,7 @@ web/
 - The fixture is renamed for what it holds. It writes UTF-8 without a byte order mark
   unless asked, so both cases can be tested.
 
-- [ ] **Step 1: Add the CSV dependency**
+- [x] **Step 1: Add the CSV dependency**
 
 ```bash
 dotnet add src/MetroDisplay.Gtfs.Static package CsvHelper --version 33.1.0
@@ -139,7 +139,7 @@ dotnet add src/MetroDisplay.Gtfs.Static package CsvHelper --version 33.1.0
 GTFS files are RFC 4180 CSV. Quoted fields containing commas are common, such as
 `"Green Line, B Branch"`, and splitting on `,` by hand breaks on real feeds.
 
-- [ ] **Step 2: Write the fixture builder**
+- [x] **Step 2: Write the fixture builder**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/GtfsFixtureBuilder.cs`:
 
@@ -225,7 +225,7 @@ public sealed class GtfsFixtureBuilder
 }
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/GtfsArchiveReaderTests.cs`:
 
@@ -316,9 +316,9 @@ public class GtfsArchiveReaderTests
 ```
 
 The byte order mark test pins real-feed behaviour: some agencies publish UTF-8 with a BOM,
-and a reader that keeps it would see the first header as `﻿route_id`.
+and a reader that keeps it would see the first header as `route_id` with an invisible U+FEFF in front of it.
 
-- [ ] **Step 4: Run the tests and confirm they fail**
+- [x] **Step 4: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~GtfsArchiveReaderTests"
@@ -326,7 +326,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~Gt
 
 Expected: build error CS0246, `The type or namespace name 'GtfsArchive' could not be found`.
 
-- [ ] **Step 5: Write the records**
+- [x] **Step 5: Write the records**
 
 `src/MetroDisplay.Gtfs.Static/Reading/GtfsRecords.cs`:
 
@@ -377,7 +377,7 @@ public sealed class GtfsShapePoint
 }
 ```
 
-- [ ] **Step 6: Write the reader**
+- [x] **Step 6: Write the reader**
 
 `src/MetroDisplay.Gtfs.Static/Reading/GtfsArchiveReader.cs`:
 
@@ -445,7 +445,7 @@ public static class GtfsArchiveReader
 `StreamReader` detects and strips a UTF-8 byte order mark by default, which is what the BOM
 test relies on.
 
-- [ ] **Step 7: Run the tests and confirm they pass**
+- [x] **Step 7: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~GtfsArchiveReaderTests"
@@ -453,7 +453,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~Gt
 
 Expected: PASS, 6 tests.
 
-- [ ] **Step 8: Run the whole suite**
+- [x] **Step 8: Run the whole suite**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -461,7 +461,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: PASS, 14 tests.
 
-- [ ] **Step 9: Hand off for commit**
+- [x] **Step 9: Hand off for commit**
 
 ```
 feat: read GTFS routes, trips and shapes
