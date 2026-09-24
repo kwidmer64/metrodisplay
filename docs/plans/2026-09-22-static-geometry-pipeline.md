@@ -1,6 +1,24 @@
 # Static Geometry Pipeline Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Superseded 2026-09-24** by the slice roadmap in spec §14. This plan built the whole
+> static pipeline before drawing anything; the roadmap draws a map first and adds one
+> visible refinement per slice. Tasks 1–2 are complete and stand. Tasks 3–14 are not
+> executed as written. They remain as reference code that slice plans lift from:
+>
+> | Task | Reused in |
+> |---|---|
+> | 3 GTFS archive reader | Slice 1 (routes, trips, shapes), slice 5 (stops) |
+> | 4 Rail route selection | Slice 1 |
+> | 5 Mercator projection | Slice 1 |
+> | 6 Extent calculation | Slice 3 |
+> | 7 Clipping and edge labels | Slices 3 and 4 |
+> | 8 Douglas–Peucker | Slice 7, with the tolerance converted from ground metres to plane units |
+> | 9 Shape deduplication | Slice 7 |
+> | 10 Coordinate normalization | Slice 1, fitted to the network's own bounds until slice 3 |
+> | 11 Trip index | Slice 8 |
+> | 12 Artifact assembly | Slice 1 (scene assembly), slice 14 (manifest, validation) |
+> | 13 Artifact storage | Slice 14 |
+> | 14 Feed client and CLI | Slice 1 (plain download), slice 14 (conditional GET); the CLI is optional |
 
 **Goal:** Turn a city's GTFS zip into a validated, versioned `NetworkArtifact` on disk, invoked by a CLI command.
 

@@ -1,7 +1,7 @@
 # MetroDisplay — Design
 
 **Date:** 2026-09-22
-**Status:** Approved, pre-implementation
+**Status:** Approved. Build order revised 2026-09-24 into small vertical slices (§14).
 
 ---
 
@@ -21,6 +21,8 @@ as the product, so the second renderer is a transcription rather than a redesign
 
 - Rail-focused: metro, light rail, commuter rail, rail hybrids. No buses.
 - Geographically truthful map at uniform scale, wireframe aesthetic.
+- Water and coastline drawn behind the rail network, so the map reads as a place and not
+  only as a diagram.
 - Live vehicle positions with continuous motion, not periodic twitching.
 - Adding a city is a config file, not code.
 - The display can be dumb enough to reimplement on constrained hardware.
@@ -52,6 +54,7 @@ as the product, so the second renderer is a transcription rather than a redesign
 | Backend | .NET |
 | Renderer | TypeScript, canvas2d |
 | Static GTFS | Separate project building versioned artifacts, run in-process; daily conditional refresh. |
+| Background | Water bodies and coastline behind the network. Data source and fill style are settled in slice 6's design (§14). |
 
 ### Rationale on the contested ones
 
@@ -130,13 +133,18 @@ flowchart LR
 
 ```
 MetroDisplay.Contracts      Scene DTOs + city config schema. Zero dependencies.
-MetroDisplay.Gtfs.Static    Library + CLI. Builds versioned NetworkArtifacts.
+MetroDisplay.Gtfs.Static    Library. Builds versioned NetworkArtifacts.
 MetroDisplay.Realtime       GTFS-RT polling, protobuf decode, RT→static join.
 MetroDisplay.Server         ASP.NET Core. Rotation, SSE, artifact refresh, health.
 web/                        Vite + TypeScript renderer (canvas2d).
 cities/                     One JSON per city.
 docs/design/mockups/        Design mockups from the brainstorming session.
 ```
+
+The Server exists from slice 1 (§14): it builds the scene at startup and serves it to the
+renderer, so the final topology is in place before any feature needs it. A standalone
+artifact-building CLI is optional. It only earns a place if the in-process build ever
+needs to run as a scheduled job (slice 14).
 
 ### Boundaries
 
@@ -149,8 +157,8 @@ docs/design/mockups/        Design mockups from the brainstorming session.
   static pipeline stages 2–8, and the whole realtime join — is a pure function over bytes,
   so those tests run against committed fixtures with no network and no API keys.
 - `INetworkArtifactStore` is the extraction seam: disk today, blob storage later, with
-  no caller changes. The same CLI can run as a scheduled container if the in-process job
-  ever becomes inadequate.
+  no caller changes. A CLI over the same library can run as a scheduled container if the
+  in-process job ever becomes inadequate.
 
 ### Why canvas2d and not SVG
 
@@ -252,7 +260,7 @@ carries an `onMap` count so the renderer can show the delta later without a cont
 
 ## 6. Static GTFS pipeline
 
-`MetroDisplay.Gtfs.Static` is a library plus CLI. Input: a city config. Output: an immutable
+`MetroDisplay.Gtfs.Static` is a library. Input: a city config. Output: an immutable
 `NetworkArtifact` — the `network` message payload plus a manifest recording source ETag,
 `feed_end_date`, build timestamp, and version id.
 
@@ -512,7 +520,14 @@ One JSON file per city in `cities/`. Adding a city touches no code.
 ```
 
 `${ENV_VAR}` interpolation is the only way credentials enter the system; no key is ever
-committed. Locally that is .NET user-secrets, deployed it is app settings or Key Vault.
+committed.
+
+`CityConfigLoader.Load` resolves placeholders from a dictionary it is handed and never reads
+the process itself. The Server builds that dictionary from `IConfiguration`, which covers
+.NET user-secrets locally and app settings or Key Vault references when deployed.
+`LoadFromProcessEnvironment` reads process environment variables only. User-secrets never
+become environment variables, so that path cannot see them. It suits a tool run from a
+shell, not the Server.
 
 v1 ships 2–3 cities, chosen for open or free-key feeds and clean rail-only shapes
 (MBTA, BART, WMATA are the expected starting set). The registry design is what makes
@@ -558,8 +573,10 @@ everything downstream of it is a pure function over bytes. Those tests run again
 fixtures, and CI needs no network and no API keys. The fetch layer itself is tested
 separately against a stub HTTP handler, covering conditional-GET behavior and backoff.
 
-**`Gtfs.Static`** — fixture is a trimmed real GTFS zip. Golden-snapshot the artifact JSON.
-Properties asserted directly:
+**`Gtfs.Static`** — fixtures are synthetic GTFS zips built in memory by test code
+(`GtfsFixtureBuilder`). A test then reads as "three routes, one of which is a bus" instead of
+"trust this binary", and no agency data is committed. Real feeds are checked by hand at the
+end of each slice. Golden-snapshot the artifact JSON. Properties asserted directly:
 
 - every emitted point lies within `[0,1]`
 - aspect is preserved under scaling (uniform scale, no distortion)
@@ -575,29 +592,82 @@ trips are counted rather than swallowed.
 
 **`Server`** — integration tests over a real SSE connection: a late join returns
 `hello` + `network` + `frame` + `alerts`; frames referencing artifact *N* never precede the
-`network` for *N*; `Last-Event-ID` resumption works.
+`network` for *N*; `Last-Event-ID` resumption works. Until SSE arrives, the HTTP endpoints
+are tested in memory through `WebApplicationFactory`.
 
-**Renderer** — unit tests for the contain-fit math and the polyline walk. Both are pure,
+**Renderer** — Vitest unit tests for the contain-fit math and the polyline walk. Both are pure,
 and both are what a future native renderer reimplements, so the tests port with them.
 
 ---
 
 ## 14. Build order
 
-Vertical slices. Something is on screen by step 2.
+Small vertical slices. Each slice is one plan of three to seven tasks and ends with
+something visible on screen or checkable by hand. Only the current slice has a detailed
+plan. The next is written once the current one lands, so it can use what the last one
+taught.
 
-1. `Contracts` + `Gtfs.Static` for one city (MBTA) → artifact on disk. CLI only, no server.
-2. Renderer loads that artifact from a file and draws the wireframe. No live data, no
-   server. This proves projection, clipping, and edge labels visually.
-3. `Realtime` for MBTA → `VehicleFrame` to stdout.
-4. `Server` + SSE, single city, live dots with tweening.
-5. Bottom rail: counts, alert ticker, progress bar.
-6. Cities two and three; rotation, crossfade, prefetch.
-7. Hardening: backoff, `stale`, `/healthz`, daily artifact refresh.
+Pixels come first. Projection, clipping, and simplification bugs are nearly invisible in
+tests but obvious the instant the map is on screen, so slice 1 draws a map before any
+refinement of the geometry exists.
 
-Step 2 is the highest-value ordering choice. Projection, clipping, and simplification bugs
-are nearly invisible in tests but obvious the instant the map is on screen — and that step
-needs no feeds, no keys, and no server.
+| # | Slice | Done when |
+|---|---|---|
+| — | Scaffold, contracts, city config | Done. `NetworkScene` wire shape pinned by a test; strict `CityConfigLoader` |
+| 1 | Lines on screen | Boston's rail lines in route colours, fit to the window. The Server builds the scene at startup and serves `GET /api/network`; the renderer draws polylines |
+| 2 | Generated contract types | TypeScript types generated from `Contracts`; renaming a C# field fails `tsc` |
+| 3 | True-scale extent and clip | Map framed on core ± `coreRadiusKm`; with commuter rail enabled, lines are visibly clipped |
+| 4 | Edge labels | `TO <TERMINUS>` where each clipped line leaves the map |
+| 5 | Stations | Station markers; the `rank` prominence rule settled by eye |
+| 6 | Water and coastline | Water drawn behind the rail network |
+| 7 | Lean geometry | Shape dedupe and Douglas–Peucker, applied to rail and water. The map looks the same; the payload shrinks |
+| 8 | Vehicle positions | `Realtime` decodes VehiclePositions and joins them to shapes; `shapeFraction`s checkable at `GET /api/frame` |
+| 9 | Live dots over SSE | `/stream` delivers `hello`, `network`, `frame`; dots drawn, snapping each poll |
+| 10 | Tweening | Dots glide along the track between polls |
+| 11 | Bottom rail | City name, clock, per-line counts |
+| 12 | Alerts ticker | ServiceAlerts polled; ticker in the rail |
+| 13 | Second city and rotation | BART added; dwell, progress, crossfade, prefetch |
+| 14 | Unattended hardening | Conditional-GET daily refresh, artifact store and versioning, backoff, `stale`, `/healthz`, the §12 failure table |
+
+### What slice 1 leaves out, and why
+
+- **Extent, clipping, edge labels, stations.** Each gets its own slice, so its effect is
+  visible in isolation. Slice 1 normalizes against the network's own bounding box. §4's
+  transform is unchanged; its extent step simply arrives in slice 3.
+- **Dedupe and simplification.** On 2026-09-24, MBTA subway and light rail measured 65
+  shapes, 17,579 points, about 250 KB of JSON. Raw geometry is fine at that size. A large
+  system such as New York or London could be 10–50× that, so slice 7 lands before any
+  large city does.
+- **Artifact store, manifest, conditional GET.** Versioning matters only once a network is
+  replaced while running (§8's ordering interlock). A scene built once at startup is never
+  replaced. Until slice 14, `artifactVersion` is `<cityId>@` plus the first 8 hex digits of
+  the zip's SHA-256. It derives from content, so the same zip always yields the same version.
+- **Failure handling.** Slices 1–13 fail fast at startup with a message naming the cause.
+  §12's degrade-and-keep-serving behaviour protects an unattended display and arrives with
+  slice 14.
+- **Trip index.** It arrives with its only consumer, slice 8, built in memory alongside the
+  scene.
+
+### Slice 6 open questions
+
+GTFS carries no water, so slice 6 is the one slice that adds an external data source. Its
+design pass settles:
+
+- **Source.** OpenStreetMap is the likely candidate: either a query at build time sized
+  from core ± radius (Overpass, for example) or a per-city file generated by a tool and
+  committed. Only the first keeps "adding a city is a config file" fully true.
+- **Fill or outline.** An outline reuses the polyline operation and slice 3's clipper. A
+  fill needs closed rings, and OSM coastline arrives as open ways that must be closed
+  against the extent box. A fill also adds a sixth operation to §10's renderer surface.
+- **Licence.** OSM data is ODbL, which puts "© OpenStreetMap contributors" on screen and
+  gives the layout an attribution line.
+- **Noise.** A minimum-area filter, so small ponds do not read as speckle.
+
+### Superseded plan
+
+`docs/plans/2026-09-22-static-geometry-pipeline.md` built the whole static pipeline before
+drawing anything. Its Tasks 1–2 are complete; Tasks 3–14 are superseded by the slices above
+and remain as reference code for slices 1, 3–5, 7, 8, and 14.
 
 ---
 
@@ -640,7 +710,7 @@ the design; all are lookups.
 
 - Exact .NET approach for GTFS-RT protobuf: compiling the official `gtfs-realtime.proto`
   with `Google.Protobuf` + `Grpc.Tools` is the vendor-neutral baseline. Community binding
-  packages exist and should be evaluated at step 3.
+  packages exist and should be evaluated at slice 8.
 - Current feed URLs, auth requirements, and published poll cadences for the chosen agencies.
 - Each agency's licence and attribution requirements, and whether attribution must appear
   on screen.
@@ -648,4 +718,5 @@ the design; all are lookups.
   it does not.
 - Whether `vehicle.vehicle.id` is stable between polls per agency; fall back to `trip_id`
   where it is not.
-- Per-city `coreRadiusKm` and `simplify.toleranceM` values, tuned by eye at step 2.
+- Per-city `coreRadiusKm` and `simplify.toleranceM` values, tuned by eye at slices 3 and 7.
+- The water data source, its licence, and the on-screen attribution it requires (slice 6).
