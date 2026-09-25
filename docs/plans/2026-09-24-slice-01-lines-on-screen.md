@@ -925,7 +925,7 @@ length is measured on the ground from latitude and longitude.
   Slice 3 intersects it with the configured core square.
 - The normalizer is Plan 1 Task 10 with its `x`/`y` locals renamed.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/ExtentRectangleTests.cs`:
 
@@ -1015,7 +1015,7 @@ public class CoordinateNormalizerTests
 }
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~ExtentRectangleTests|FullyQualifiedName~CoordinateNormalizerTests"
@@ -1023,7 +1023,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~Ex
 
 Expected: build error CS0246, `The type or namespace name 'ExtentRectangle' could not be found`.
 
-- [ ] **Step 3: Write the rectangle**
+- [x] **Step 3: Write the rectangle**
 
 `src/MetroDisplay.Gtfs.Static/Geometry/ExtentRectangle.cs`:
 
@@ -1079,7 +1079,7 @@ public readonly record struct ExtentRectangle(double MinX, double MinY, double M
 }
 ```
 
-- [ ] **Step 4: Write the normalizer**
+- [x] **Step 4: Write the normalizer**
 
 `src/MetroDisplay.Gtfs.Static/Geometry/CoordinateNormalizer.cs`:
 
@@ -1129,15 +1129,24 @@ public static class CoordinateNormalizer
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~ExtentRectangleTests|FullyQualifiedName~CoordinateNormalizerTests"
 ```
 
-Expected: PASS, 7 tests.
+Expected: PASS, 10 tests.
 
-- [ ] **Step 6: Hand off for commit**
+**As built:** a gap analysis after GREEN found that every planned test used an extent anchored
+at the origin, wide or square, while real input sits millions of metres from the origin and
+MBTA is taller than it is wide. Three tests close that. `NormalizesATallExtentAwayFromTheOrigin`
+catches a dropped `- MinX`, `Height - Y` in place of `MaxY - Y`, and `LongestSpan` reduced to
+`Width`. `EnclosesPointsThatAllLieOnOneSideOfTheOrigin` uses Boston-like and Sydney-like
+coordinates to catch bounds seeded with 0 instead of infinity. `HandlesASinglePointWithoutDividingByZero`
+pins both zero-size guards, which would otherwise put NaN on the wire. Each was shown to
+fail against its mutants. Later suite totals include all three.
+
+- [x] **Step 6: Hand off for commit**
 
 ```
 feat: normalize the network to its own bounds
@@ -1520,7 +1529,7 @@ Expected: PASS, 15 tests (10 facts, plus 5 cases of the colour theory).
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 50 tests.
+Expected: PASS, 53 tests.
 
 - [ ] **Step 6: Hand off for commit**
 
@@ -2053,7 +2062,7 @@ Expected: PASS, 7 tests.
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 57 tests (50 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
+Expected: PASS, 60 tests (53 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
 
 - [ ] **Step 13: Run it against the real feed**
 
@@ -2494,7 +2503,7 @@ by max(1, aspect) and drew wide maps at a fraction of their size.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 57 tests.
+- `dotnet test MetroDisplay.slnx` passes with 60 tests.
 - `npm test` in `web/` passes with 5 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` both running, `http://localhost:5173` shows Boston's
   eight rail routes in their colours, correctly proportioned, centred with a margin, and
