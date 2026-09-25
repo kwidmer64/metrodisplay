@@ -1178,7 +1178,7 @@ decimals. The configured extent replaces these bounds in slice 3.
 - Shape points are now explicitly ordered by `shape_pt_sequence`.
 - A line's name prefers `route_long_name`. Display abbreviations are slice 11's decision.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/NetworkSceneBuilderTests.cs`:
 
@@ -1371,7 +1371,7 @@ public class NetworkSceneBuilderTests
 `DerivesTheVersionFromTheZipContents` reuses one `original` byte array on purpose. Zip
 entries carry a timestamp, so two `Build()` calls a second apart produce different bytes.
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~NetworkSceneBuilderTests"
@@ -1379,7 +1379,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~Ne
 
 Expected: build error CS0103, `The name 'NetworkSceneBuilder' does not exist in the current context`.
 
-- [ ] **Step 3: Write the builder**
+- [x] **Step 3: Write the builder**
 
 `src/MetroDisplay.Gtfs.Static/Pipeline/NetworkSceneBuilder.cs`:
 
@@ -1515,23 +1515,32 @@ public static class NetworkSceneBuilder
 }
 ```
 
-- [ ] **Step 4: Run the tests and confirm they pass**
+- [x] **Step 4: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~NetworkSceneBuilderTests"
 ```
 
-Expected: PASS, 15 tests (10 facts, plus 5 cases of the colour theory).
+Expected: PASS, 18 tests (13 facts, plus 5 cases of the colour theory).
 
-- [ ] **Step 5: Run the whole suite**
+**As built:** a gap analysis after GREEN found three outcomes of `Build` that no planned test
+observed. `CarriesTheCityIdentityFromConfig` catches swapped same-typed arguments to
+`CityMetadata`. `AppliesTheCitysRouteFilter` catches the config's `RouteFilter` not being passed
+to the selector, since the test config has none. `ReportsSpanAlongTheLongerAxisOfATallNetwork`
+catches `spanKm` measured from `Width`, which the wide fixture hides (2.23 km against 0.82 km).
+Each was shown to fail against its mutant. A fourth candidate, a dropped `.Distinct()`, turned
+out to be caught already: `MeasuresShapeLengthOnTheGround` calls `.Single()` on a line whose two
+trips share one shape.
+
+- [x] **Step 5: Run the whole suite**
 
 ```bash
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 53 tests.
+Expected: PASS, 56 tests.
 
-- [ ] **Step 6: Hand off for commit**
+- [x] **Step 6: Hand off for commit**
 
 ```
 feat: build the network scene from a GTFS zip
@@ -2062,7 +2071,7 @@ Expected: PASS, 7 tests.
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 60 tests (53 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
+Expected: PASS, 63 tests (56 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
 
 - [ ] **Step 13: Run it against the real feed**
 
@@ -2503,7 +2512,7 @@ by max(1, aspect) and drew wide maps at a fraction of their size.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 60 tests.
+- `dotnet test MetroDisplay.slnx` passes with 63 tests.
 - `npm test` in `web/` passes with 5 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` both running, `http://localhost:5173` shows Boston's
   eight rail routes in their colours, correctly proportioned, centred with a margin, and
