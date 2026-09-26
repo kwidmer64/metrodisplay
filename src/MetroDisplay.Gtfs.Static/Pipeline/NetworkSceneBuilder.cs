@@ -47,6 +47,7 @@ public static class NetworkSceneBuilder
 
 
         // selects all the points, gets the latitudes from those points, converts to list
+        // Mercator stretches based on latitude, and using the middle latittude minimizes the error
         List<double> latitudes = geoPointsByShapeId.Values.SelectMany(points => points).Select(point => point.Latitude).ToList();
         double centerLatitude = (latitudes.Min() + latitudes.Max()) / 2.0;
 
