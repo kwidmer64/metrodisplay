@@ -1,0 +1,5 @@
+@baseUrl = http://localhost:5180
+
+### The network scene the renderer draws: lines, colours and normalized points
+GET {{baseUrl}}/api/network
+Accept: application/json
