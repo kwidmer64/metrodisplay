@@ -2,8 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/MetroDisplay.Contracts/MetroDisplay.Contracts.csproj" />
     <Project Path="src/MetroDisplay.Gtfs.Static/MetroDisplay.Gtfs.Static.csproj" />
+    <Project Path="src/MetroDisplay.Server/MetroDisplay.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MetroDisplay.Gtfs.Static.Tests/MetroDisplay.Gtfs.Static.Tests.csproj" />
+    <Project Path="tests/MetroDisplay.Server.Tests/MetroDisplay.Server.Tests.csproj" />
   </Folder>
 </Solution>

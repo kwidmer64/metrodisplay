@@ -1588,7 +1588,7 @@ Facts this task relies on, all checked against SDK 10.0.401 on 2026-09-24:
 - .NET 10 generates a public `Program` class, so `WebApplicationFactory<Program>` needs no
   `public partial class Program;` declaration.
 
-- [ ] **Step 1: Scaffold the Server project**
+- [x] **Step 1: Scaffold the Server project**
 
 ```bash
 dotnet new web -o src/MetroDisplay.Server
@@ -1599,7 +1599,7 @@ dotnet add src/MetroDisplay.Server reference src/MetroDisplay.Contracts/MetroDis
 The template creates `Program.cs`, `appsettings.json`, `appsettings.Development.json` and
 `Properties/launchSettings.json`. Steps 9–10 replace three of them.
 
-- [ ] **Step 2: Scaffold the test project**
+- [x] **Step 2: Scaffold the test project**
 
 ```bash
 dotnet new xunit -o tests/MetroDisplay.Server.Tests
@@ -1619,7 +1619,7 @@ so both test projects build zips the same way:
   </ItemGroup>
 ```
 
-- [ ] **Step 3: Write the test helpers**
+- [x] **Step 3: Write the test helpers**
 
 `tests/MetroDisplay.Server.Tests/StubHttpHandler.cs`:
 
@@ -1659,7 +1659,7 @@ internal sealed class TemporaryDirectory : IDisposable
 }
 ```
 
-- [ ] **Step 4: Write the failing feed cache tests**
+- [x] **Step 4: Write the failing feed cache tests**
 
 `tests/MetroDisplay.Server.Tests/StaticFeedCacheTests.cs`:
 
@@ -1736,7 +1736,7 @@ public class StaticFeedCacheTests
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they fail**
+- [x] **Step 5: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~StaticFeedCacheTests"
@@ -1744,7 +1744,7 @@ dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~StaticF
 
 Expected: build error CS0234, `The type or namespace name 'Feeds' does not exist in the namespace 'MetroDisplay.Server'`.
 
-- [ ] **Step 6: Write the feed cache**
+- [x] **Step 6: Write the feed cache**
 
 `src/MetroDisplay.Server/Feeds/StaticFeedCache.cs`:
 
@@ -1797,7 +1797,7 @@ public sealed class StaticFeedCache(HttpClient httpClient, string cacheDirectory
 }
 ```
 
-- [ ] **Step 7: Run the tests and confirm they pass**
+- [x] **Step 7: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~StaticFeedCacheTests"
@@ -1805,7 +1805,7 @@ dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~StaticF
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 8: Write the failing configuration and endpoint tests**
+- [x] **Step 8: Write the failing configuration and endpoint tests**
 
 `tests/MetroDisplay.Server.Tests/ConfigurationEnvironmentTests.cs`:
 
@@ -1920,7 +1920,7 @@ public sealed class NetworkEndpointTests : IDisposable
 }
 ```
 
-- [ ] **Step 9: Run the tests and confirm they fail**
+- [x] **Step 9: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests
@@ -1928,7 +1928,7 @@ dotnet test tests/MetroDisplay.Server.Tests
 
 Expected: build error CS0103, `The name 'ConfigurationEnvironment' does not exist in the current context`.
 
-- [ ] **Step 10: Write the settings, configuration adapter and startup**
+- [x] **Step 10: Write the settings, configuration adapter and startup**
 
 `src/MetroDisplay.Server/ServerSettings.cs`:
 
@@ -2057,23 +2057,31 @@ Add one line to `.gitignore`, so the downloaded feed never lands in history:
 .cache/
 ```
 
-- [ ] **Step 11: Run the Server tests and confirm they pass**
+- [x] **Step 11: Run the Server tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests
 ```
 
-Expected: PASS, 7 tests.
+Expected: PASS, 8 tests.
 
-- [ ] **Step 12: Run the whole suite**
+**As built:** a gap analysis found that `Program.cs`'s wiring of `IConfiguration` into
+`CityConfigLoader.Load` was unobserved: the test city has no placeholder, so passing an empty
+dictionary instead still passed every test. `ResolvesCityPlaceholdersFromConfiguration` gives
+the city a `${TEST_FEED_KEY}` header, sets the key through host configuration, and requires a
+successful start. Against the empty-dictionary mutant it fails with the loader's own error.
+A `MetroDisplay.Server.http` file with the one request was added, per the Web API conventions,
+so the endpoint can be called from Visual Studio.
+
+- [x] **Step 12: Run the whole suite**
 
 ```bash
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 63 tests (56 in `MetroDisplay.Gtfs.Static.Tests`, 7 in `MetroDisplay.Server.Tests`).
+Expected: PASS, 64 tests (56 in `MetroDisplay.Gtfs.Static.Tests`, 8 in `MetroDisplay.Server.Tests`).
 
-- [ ] **Step 13: Run it against the real feed**
+- [x] **Step 13: Run it against the real feed**
 
 ```bash
 dotnet run --project src/MetroDisplay.Server
@@ -2090,7 +2098,7 @@ curl -s http://localhost:5180/api/network | head -c 400
 Expected: camelCase JSON that starts `{"artifactVersion":"mbta@`. Stop the Server and run it
 again: it starts without downloading.
 
-- [ ] **Step 14: Hand off for commit**
+- [x] **Step 14: Hand off for commit**
 
 ```
 feat: serve the network scene from the server
@@ -2120,7 +2128,7 @@ Toolchain facts, checked on 2026-09-24: `create-vite` 9 pins TypeScript `~6.0.2`
 Vite `^8.3.0`, and Vitest 5.0.1 runs with both. The files below are written by hand rather
 than scaffolded, so there is no template content to delete.
 
-- [ ] **Step 1: Create the package and install**
+- [x] **Step 1: Create the package and install**
 
 `web/package.json`:
 
@@ -2149,7 +2157,7 @@ cd web && npm install
 
 Expected: `node_modules/` (already ignored) and `package-lock.json`, which is committed.
 
-- [ ] **Step 2: Add the TypeScript and Vite config**
+- [x] **Step 2: Add the TypeScript and Vite config**
 
 `web/tsconfig.json`:
 
@@ -2188,7 +2196,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Write the failing fit tests**
+- [x] **Step 3: Write the failing fit tests**
 
 `web/src/fit.test.ts`:
 
@@ -2227,15 +2235,15 @@ The first test also catches a defect in spec §4. The spec's formula divides by
 `Math.max(1, aspect)` and would give a scale of 500 here, drawing a wide map at half size.
 Step 7 corrects the spec.
 
-- [ ] **Step 4: Run the tests and confirm they fail**
+- [x] **Step 4: Run the tests and confirm they fail**
 
 ```bash
 cd web && npm test
 ```
 
-Expected: FAIL, `Failed to resolve import "./fit" from "src/fit.test.ts"`.
+Expected: FAIL, `Cannot find module './fit' imported from .../src/fit.test.ts` (Vitest 5 wording).
 
-- [ ] **Step 5: Write the fit math**
+- [x] **Step 5: Write the fit math**
 
 `web/src/fit.ts`:
 
@@ -2270,7 +2278,7 @@ export function toPixel(fit: Fit, normalizedX: number, normalizedY: number): [nu
 }
 ```
 
-- [ ] **Step 6: Run the tests and confirm they pass**
+- [x] **Step 6: Run the tests and confirm they pass**
 
 ```bash
 cd web && npm test
@@ -2278,7 +2286,7 @@ cd web && npm test
 
 Expected: PASS, 5 tests.
 
-- [ ] **Step 7: Correct the fit formula in spec §4**
+- [x] **Step 7: Correct the fit formula in spec §4**
 
 In `docs/specs/2026-09-22-metrodisplay-design.md`, under "Renderer fit", replace the block
 
@@ -2303,7 +2311,7 @@ Check: a wide map with aspect 2 in a 1000 × 1000 viewport. It is 1 unit wide, s
 scale should be 1000. The old formula gives `min(1000 / 2, 1000 / 1) = 500`. The new one
 gives `min(1000 / 1, 1000 / 0.5) = 1000`.
 
-- [ ] **Step 8: Write the page, the contract types, drawing and startup**
+- [x] **Step 8: Write the page, the contract types, drawing and startup**
 
 `web/index.html`:
 
@@ -2465,7 +2473,7 @@ loadScene()
 The status line is a stand-in for the bottom rail, which arrives in slice 11. For now it
 confirms which scene is on screen and reports a failed load.
 
-- [ ] **Step 9: Type-check and build**
+- [x] **Step 9: Type-check and build**
 
 ```bash
 cd web && npm run build
@@ -2473,7 +2481,7 @@ cd web && npm run build
 
 Expected: `tsc` reports nothing, and Vite writes `web/dist/` (already ignored).
 
-- [ ] **Step 10: Look at it**
+- [x] **Step 10: Look at it**
 
 In one terminal:
 
@@ -2497,7 +2505,7 @@ Open `http://localhost:5173`. Expected:
 - Stop the Server and reload. The page stays dark, and the status line reads
   `Network unavailable: GET /api/network returned HTTP <status>.`
 
-- [ ] **Step 11: Hand off for commit**
+- [x] **Step 11: Hand off for commit**
 
 ```
 feat: draw the rail network in the browser
@@ -2512,7 +2520,7 @@ by max(1, aspect) and drew wide maps at a fraction of their size.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 63 tests.
+- `dotnet test MetroDisplay.slnx` passes with 65 tests (the final review added `NamesTheCachedFeedWhenItIsNotAZip`).
 - `npm test` in `web/` passes with 5 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` both running, `http://localhost:5173` shows Boston's
   eight rail routes in their colours, correctly proportioned, centred with a margin, and

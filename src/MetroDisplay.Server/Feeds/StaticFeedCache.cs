@@ -12,11 +12,16 @@ namespace MetroDisplay.Server.Feeds;
 /// <param name="gtfsStoreDirectory">Where zips are kept, one per city as <c>&lt;cityId&gt;.zip</c>. Created on first download.</param>
 public sealed class StaticFeedCache(HttpClient httpClient, string gtfsStoreDirectory)
 {
+    /// <summary>
+    /// Where a city's feed is kept, so an error about a bad cached feed can name the file to delete.
+    /// </summary>
+    public string CachePathFor(string cityId) => Path.Combine(gtfsStoreDirectory, $"{cityId}.zip");
+
     /// <exception cref="HttpRequestException">The download failed. The message names the city and URL, and nothing is cached.</exception>
     public async Task<byte[]> GetAsync(string cityId, FeedSource source, CancellationToken cancellationToken = default)
     {
         // Generate the file path and check if it already exists
-        string filePath = Path.Combine(gtfsStoreDirectory, $"{cityId}.zip");
+        string filePath = CachePathFor(cityId);
         if (File.Exists(filePath))
         {
             return await File.ReadAllBytesAsync(filePath, cancellationToken);

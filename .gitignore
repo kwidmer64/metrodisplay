@@ -4,6 +4,7 @@ obj/
 node_modules/
 dist/
 .artifacts/
+.cache/
 .vs/
 *.user
 appsettings.*.local.json

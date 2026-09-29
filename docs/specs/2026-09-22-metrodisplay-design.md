@@ -203,9 +203,10 @@ Coordinates land in `[0,1]` on the long axis and `[0, shorterSpan / longestSpan]
 ### Renderer fit
 
 ```ts
+// The map measures min(1, aspect) by min(1, 1 / aspect) normalized units.
 const scale = Math.min(
-  viewportWidth  / Math.max(1, aspect),
-  viewportHeight / Math.max(1, 1 / aspect),
+  viewportWidth  / Math.min(1, aspect),
+  viewportHeight / Math.min(1, 1 / aspect),
 );
 const pixelX = originX + normalizedX * scale;
 const pixelY = originY + normalizedY * scale;

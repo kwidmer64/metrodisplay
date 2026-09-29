@@ -82,6 +82,20 @@ public sealed class NetworkEndpointTests : IDisposable
     }
 
     [Fact]
+    public void NamesTheCachedFeedWhenItIsNotAZip()
+    {
+        // A captive portal or an interrupted download can leave a cached file that is not a zip.
+        // Every later start would fail on it, so the error has to say which file to delete.
+        using WebApplicationFactory<Program> factory = CreateFactory("test");
+        string cachedFeed = Path.Combine(workspace.FullPath, "cache", "test.zip");
+        File.WriteAllText(cachedFeed, "<html>Sign in to continue</html>");
+
+        Exception exception = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
+
+        Assert.Contains(cachedFeed, exception.Message);
+    }
+
+    [Fact]
     public void RefusesToStartWithoutItsCityConfig()
     {
         using WebApplicationFactory<Program> factory = CreateFactory("missing");
