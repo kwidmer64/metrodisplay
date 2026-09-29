@@ -1,5 +1,9 @@
 # Slice 1: Lines on Screen Implementation Plan
 
+> **Slice numbers** in this plan follow the roadmap as it stood when the plan was written. On
+> 2026-09-28 water moved to slice 2 and place names became 7: old 2–5 are now 3–6, old 6 is
+> now 2, and old 7–14 are now 8–15 (spec §14).
+
 **Goal:** Boston's rail lines drawn in their route colours in a browser, built from the MBTA
 static GTFS feed by a .NET server.
 

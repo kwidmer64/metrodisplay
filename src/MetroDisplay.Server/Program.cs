@@ -14,7 +14,7 @@ ServerSettings settings = app.Configuration.GetRequiredSection("MetroDisplay").G
 string contentRoot = app.Environment.ContentRootPath;
 
 // The scene is built once, before the Server listens. Any failure stops startup and names
-// its cause; degrading gracefully is slice 14's job.
+// its cause; degrading gracefully is slice 15's job.
 string configPath = Path.GetFullPath(Path.Combine(contentRoot, settings.CitiesDirectory, $"{settings.CityId}.json"));
 CityConfig config = CityConfigLoader.Load(await File.ReadAllTextAsync(configPath), ConfigurationEnvironment.From(app.Configuration));
 

@@ -6,7 +6,7 @@ namespace MetroDisplay.Server.Feeds;
 /// <summary>
 /// Downloads a city's static GTFS zip once and keeps it on disk, so a restart does not fetch
 /// 25 MB again. There is no refresh: delete the cached file to pick up a newer feed.
-/// Conditional GET and a daily re-check arrive in slice 14.
+/// Conditional GET and a daily re-check arrive in slice 15.
 /// </summary>
 /// <param name="httpClient">Client used for the download.</param>
 /// <param name="gtfsStoreDirectory">Where zips are kept, one per city as <c>&lt;cityId&gt;.zip</c>. Created on first download.</param>

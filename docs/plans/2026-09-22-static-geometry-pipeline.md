@@ -1,5 +1,9 @@
 # Static Geometry Pipeline Implementation Plan
 
+> **Slice numbers** in this plan follow the roadmap as it stood when the plan was written. On
+> 2026-09-28 water moved to slice 2 and place names became 7: old 2–5 are now 3–6, old 6 is
+> now 2, and old 7–14 are now 8–15 (spec §14).
+
 > **Superseded 2026-09-24** by the slice roadmap in spec §14. This plan built the whole
 > static pipeline before drawing anything; the roadmap draws a map first and adds one
 > visible refinement per slice. Tasks 1–2 are complete and stand. Tasks 3–14 are not

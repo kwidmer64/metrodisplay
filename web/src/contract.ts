@@ -1,5 +1,5 @@
 // Mirrors the parts of MetroDisplay.Contracts the renderer reads. Written by hand for now;
-// slice 2 replaces this file with types generated from the C# records.
+// slice 3 replaces this file with types generated from the C# records.
 
 export interface NetworkScene {
   artifactVersion: string;

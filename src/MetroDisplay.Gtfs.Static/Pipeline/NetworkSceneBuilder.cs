@@ -132,7 +132,7 @@ public static class NetworkSceneBuilder
 
     /// <summary>
     /// Derived from the zip so the same feed always yields the same version. The artifact
-    /// store replaces this with a dated version in slice 14.
+    /// store replaces this with a dated version in slice 15.
     /// </summary>
     private static string ContentVersion(string cityId, byte[] zipBytes) => $"{cityId}@{Convert.ToHexStringLower(SHA256.HashData(zipBytes))[..8]}";
 }
