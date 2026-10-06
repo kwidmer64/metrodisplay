@@ -685,8 +685,11 @@ Moved ahead of the generated types and the extent on 2026-09-28. Its design sett
   edge into sea polygons (OSM keeps land on the left). Lakes and rivers come from
   `natural=water` and `waterway=riverbank` ways and multipolygon relations, with islands as
   holes. Geometry uses NetTopologySuite; the coastline closing is ours.
-- **Frame.** Until slice 4, water is clipped to the rail network's bounds and normalized with
-  them, so both layers share one frame.
+- **Frame.** Water is clipped to the square of core ± `coreRadiusKm`, the frame slice 4 gives
+  the whole map, and normalized with the rail network's bounds so both layers line up. Until
+  slice 4 that leaves water coordinates outside `[0, 1]` wherever the square is larger than
+  the network; the screen edge does the cutting. Clipping to the network's own bounds was
+  tried first and ended the harbour in a hard edge at the easternmost station.
 - **Noise and size.** Areas under 2 ha of ground are dropped, and outlines are simplified with
   a topology-preserving simplifier at 15 m of ground distance, converted to plane units.
 - **Licence.** ODbL: `© OpenStreetMap contributors` is shown whenever water is drawn.
