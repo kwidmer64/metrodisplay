@@ -354,7 +354,7 @@ normalized with, so other layers can share its frame.
   `static GeoBox Around(GeoPoint centre, double radiusKm)` and `ExtentRectangle ToPlane()`;
   `OverpassQuery.Water(GeoBox box) -> string`.
 
-- [ ] **Step 1: Create the projects**
+- [x] **Step 1: Create the projects**
 
 ```bash
 dotnet new classlib -o src/MetroDisplay.Osm
@@ -369,7 +369,7 @@ dotnet sln MetroDisplay.slnx add tests/MetroDisplay.Osm.Tests/MetroDisplay.Osm.T
 dotnet add tests/MetroDisplay.Osm.Tests reference src/MetroDisplay.Osm/MetroDisplay.Osm.csproj
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `tests/MetroDisplay.Osm.Tests/OverpassReaderTests.cs`:
 
@@ -433,10 +433,13 @@ public class OverpassReaderTests
         Assert.Contains("not valid JSON", exception.Message);
     }
 
-    [Fact]
-    public void RejectsJsonWithoutAnElementsArray()
+    [Theory]
+    [InlineData("""{"version":0.6}""")]
+    [InlineData("""{"elements":{}}""")]
+    [InlineData("[]")]
+    public void RejectsJsonWithoutAnElementsArray(string json)
     {
-        var exception = Assert.Throws<InvalidDataException>(() => OverpassReader.Read("""{"version":0.6}"""));
+        var exception = Assert.Throws<InvalidDataException>(() => OverpassReader.Read(json));
 
         Assert.Contains("no elements", exception.Message);
     }
@@ -503,7 +506,9 @@ public class OverpassQueryTests
         Assert.Contains($"way[\"natural\"=\"water\"]{BostonArea};", query);
         Assert.Contains($"relation[\"natural\"=\"water\"]{BostonArea};", query);
         Assert.Contains($"way[\"waterway\"=\"riverbank\"]{BostonArea};", query);
-        Assert.Contains("[out:json]", query);
+        Assert.Contains($"relation[\"waterway\"=\"riverbank\"]{BostonArea};", query);
+        // Overpass gives up after 25 s unless told otherwise, and a city's water takes longer.
+        Assert.Contains("[out:json][timeout:180];", query);
         Assert.Contains("out geom;", query);
     }
 
@@ -526,16 +531,16 @@ public class OverpassQueryTests
 }
 ```
 
-- [ ] **Step 3: Run the tests and confirm they fail**
+- [x] **Step 3: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Osm.Tests
 ```
 
-Expected: build errors CS0246 and CS0103, starting with
-`The type or namespace name 'OverpassResponse' could not be found`.
+Expected: build error CS0246, `The type or namespace name 'GeoBox' could not be found`.
+The compiler stops at the field declarations before it reaches the method bodies.
 
-- [ ] **Step 4: Write the response records and the reader**
+- [x] **Step 4: Write the response records and the reader**
 
 `src/MetroDisplay.Osm/Overpass.cs`:
 
@@ -618,7 +623,7 @@ public static class OverpassReader
 }
 ```
 
-- [ ] **Step 5: Write the box and the query**
+- [x] **Step 5: Write the box and the query**
 
 `src/MetroDisplay.Osm/GeoBox.cs`:
 
@@ -702,15 +707,15 @@ public static class OverpassQuery
 }
 ```
 
-- [ ] **Step 6: Run the tests and confirm they pass**
+- [x] **Step 6: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Osm.Tests
 ```
 
-Expected: PASS, 9 tests.
+Expected: PASS, 11 tests.
 
-- [ ] **Step 7: Hand off for commit**
+- [x] **Step 7: Hand off for commit**
 
 ```
 feat: read Overpass responses and build the water query
@@ -1437,7 +1442,7 @@ public static class WaterLayerBuilder
 dotnet test tests/MetroDisplay.Osm.Tests
 ```
 
-Expected: PASS, 30 tests (9 from Task 3, 8 from Task 4, 6 and 7 here).
+Expected: PASS, 32 tests (11 from Task 3, 8 from Task 4, 6 and 7 here).
 
 - [ ] **Step 6: Run the whole suite**
 
@@ -1445,7 +1450,7 @@ Expected: PASS, 30 tests (9 from Task 3, 8 from Task 4, 6 and 7 here).
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 96 tests (20 Spatial, 37 Gtfs.Static, 30 Osm, 9 Server).
+Expected: PASS, 98 tests (20 Spatial, 37 Gtfs.Static, 32 Osm, 9 Server).
 
 - [ ] **Step 7: Hand off for commit**
 
@@ -1894,7 +1899,7 @@ Expected: PASS, 17 tests.
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 104 tests (20 Spatial, 37 Gtfs.Static, 30 Osm, 17 Server).
+Expected: PASS, 106 tests (20 Spatial, 37 Gtfs.Static, 32 Osm, 17 Server).
 
 - [ ] **Step 11: Run it against the real Overpass**
 
@@ -2130,7 +2135,7 @@ other. OpenStreetMap is credited whenever water is drawn.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 104 tests.
+- `dotnet test MetroDisplay.slnx` passes with 106 tests.
 - `npm test` in `web/` passes with 7 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` running, `http://localhost:5173` shows Boston's rail over
   its filled harbour, rivers and lakes, with the OpenStreetMap credit.
