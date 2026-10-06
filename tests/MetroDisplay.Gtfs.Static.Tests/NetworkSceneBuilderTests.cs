@@ -1,5 +1,6 @@
 using MetroDisplay.Contracts;
 using MetroDisplay.Gtfs.Static.Pipeline;
+using MetroDisplay.Spatial;
 using Xunit;
 
 namespace MetroDisplay.Gtfs.Static.Tests;
@@ -32,6 +33,19 @@ public class NetworkSceneBuilderTests
         NetworkScene scene = Build(GtfsFixtureBuilder.TwoRailLinesAndABus());
 
         Assert.Equal(new[] { "Green", "Red" }, scene.Lines.Select(line => line.Id));
+    }
+
+    [Fact]
+    public void ExposesTheBoundsItsCoordinatesAreNormalizedIn()
+    {
+        // The fixture's rail runs 42.32..42.36 N and 71.12..71.06 W. Other layers are
+        // normalized with these same bounds so they line up with the rail.
+        RailLayer layer = NetworkSceneBuilder.BuildLayer(GtfsFixtureBuilder.TwoRailLinesAndABus().Build(), TestConfig());
+
+        PlanePoint southWest = MercatorProjector.Project(new GeoPoint(42.32, -71.12));
+        PlanePoint northEast = MercatorProjector.Project(new GeoPoint(42.36, -71.06));
+        Assert.Equal(new ExtentRectangle(southWest.X, southWest.Y, northEast.X, northEast.Y), layer.Bounds);
+        Assert.Empty(layer.Scene.Water);
     }
 
     [Fact]

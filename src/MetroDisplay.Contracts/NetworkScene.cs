@@ -9,7 +9,8 @@ namespace MetroDisplay.Contracts;
 /// <param name="Lines">Rail lines to draw.</param>
 /// <param name="Stations">Parent stations inside the extent.</param>
 /// <param name="EdgeLabels">Terminus labels placed where clipped lines leave the extent.</param>
-public sealed record NetworkScene(string ArtifactVersion, CityMetadata City, ExtentInfo Extent, IReadOnlyList<LineScene> Lines, IReadOnlyList<StationMarker> Stations, IReadOnlyList<EdgeLabel> EdgeLabels);
+/// <param name="Water">Water bodies drawn behind the lines. Empty when water is unavailable.</param>
+public sealed record NetworkScene(string ArtifactVersion, CityMetadata City, ExtentInfo Extent, IReadOnlyList<LineScene> Lines, IReadOnlyList<StationMarker> Stations, IReadOnlyList<EdgeLabel> EdgeLabels, IReadOnlyList<WaterArea> Water);
 
 /// <summary>
 /// Display identity of a city.
@@ -63,3 +64,9 @@ public sealed record StationMarker(double X, double Y, string Name, int Rank);
 /// <param name="Angle">Direction of travel at the exit, in degrees, screen convention.</param>
 /// <param name="Line">Id of the <see cref="LineScene"/> this label belongs to.</param>
 public sealed record EdgeLabel(double X, double Y, string Text, double Angle, string Line);
+
+/// <summary>
+/// One body of water: its outline and any islands inside it.
+/// </summary>
+/// <param name="Rings">The outline first, then one ring per island. Each ring is a flat [x0,y0,x1,y1,...] array in the normalized extent space and is implicitly closed. Values fall outside [0,1] where water runs past the extent.</param>
+public sealed record WaterArea(IReadOnlyList<IReadOnlyList<double>> Rings);

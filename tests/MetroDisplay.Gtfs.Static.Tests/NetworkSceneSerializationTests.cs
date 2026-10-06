@@ -21,7 +21,8 @@ public class NetworkSceneSerializationTests
                 ])
             ],
             Stations: [new StationMarker(0.412, 0.331, "Park St", 2)],
-            EdgeLabels: [new EdgeLabel(0.998, 0.402, "TO ALEWIFE", -12.4, "Red")]);
+            EdgeLabels: [new EdgeLabel(0.998, 0.402, "TO ALEWIFE", -12.4, "Red")],
+            Water: [new WaterArea([[0.61, 0.2, 0.64, 0.21, 0.62, 0.25], [0.62, 0.21, 0.63, 0.21, 0.62, 0.22]])]);
 
         string json = JsonSerializer.Serialize(scene, JsonDefaults.Options);
 
@@ -31,6 +32,7 @@ public class NetworkSceneSerializationTests
         Assert.Contains("\"points\":[0.1043,0.8812,0.1121,0.879]", json);
         Assert.Contains("\"lengthM\":28140", json);
         Assert.Contains("\"edgeLabels\":[{\"x\":0.998,\"y\":0.402,\"text\":\"TO ALEWIFE\"", json);
+        Assert.Contains("\"water\":[{\"rings\":[[0.61,0.2,0.64,0.21,0.62,0.25],[0.62,0.21,0.63,0.21,0.62,0.22]]}]", json);
         Assert.DoesNotContain("\"frame\"", json);
     }
 }

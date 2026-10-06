@@ -212,7 +212,7 @@ because a Geometry namespace would shadow NetTopologySuite's type.
   `NetworkSceneBuilder.BuildLayer(byte[] zipBytes, CityConfig config) -> RailLayer`.
   `NetworkSceneBuilder.Build` stays and returns `BuildLayer(...).Scene`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `NetworkSceneSerializationTests.cs`, add a `Water` argument to the scene and one assertion:
 
@@ -243,16 +243,16 @@ In `NetworkSceneBuilderTests.cs`, add `using MetroDisplay.Spatial;` and this tes
     }
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests
 ```
 
-Expected: build errors CS0246, `The type or namespace name 'WaterArea' could not be found`,
+Expected: build errors: CS0246 `The type or namespace name 'WaterArea' could not be found`,
 and likewise `'RailLayer'`.
 
-- [ ] **Step 3: Add water to the contract**
+- [x] **Step 3: Add water to the contract**
 
 In `src/MetroDisplay.Contracts/NetworkScene.cs`, add a `<param>` line and a last parameter to
 `NetworkScene`:
@@ -273,7 +273,7 @@ and at the end of the file:
 public sealed record WaterArea(IReadOnlyList<IReadOnlyList<double>> Rings);
 ```
 
-- [ ] **Step 4: Expose the rail frame**
+- [x] **Step 4: Expose the rail frame**
 
 In `src/MetroDisplay.Gtfs.Static/Pipeline/NetworkSceneBuilder.cs`:
 
@@ -314,7 +314,7 @@ Keep the existing doc comment on `BuildLayer`, and add `Build` back above it:
     public static NetworkScene Build(byte[] zipBytes, CityConfig config) => BuildLayer(zipBytes, config).Scene;
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -322,7 +322,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: PASS, 66 tests (20 Spatial, 37 Gtfs.Static, 9 Server).
 
-- [ ] **Step 6: Hand off for commit**
+- [x] **Step 6: Hand off for commit**
 
 ```
 feat: add water to the scene contract

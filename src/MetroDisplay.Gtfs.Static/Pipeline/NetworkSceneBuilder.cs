@@ -6,6 +6,13 @@ using MetroDisplay.Gtfs.Static.Reading;
 namespace MetroDisplay.Gtfs.Static.Pipeline;
 
 /// <summary>
+/// The rail scene together with the frame its coordinates are normalized in.
+/// </summary>
+/// <param name="Scene">The scene, with no water yet.</param>
+/// <param name="Bounds">Plane rectangle every normalized coordinate in <paramref name="Scene"/> is relative to. Other layers normalize with it so they line up with the rail.</param>
+public sealed record RailLayer(NetworkScene Scene, ExtentRectangle Bounds);
+
+/// <summary>
 /// Turns a GTFS zip and a city config into the scene the renderer draws. Pure over its
 /// inputs: the same zip and config always produce the same scene, version included.
 /// </summary>
@@ -20,10 +27,16 @@ public static class NetworkSceneBuilder
     /// </summary>
     public const string FallbackColor = "#8E9BAD";
 
+    /// <summary>
+    /// The rail scene alone, for callers that need no other layer.
+    /// </summary>
+    /// <exception cref="InvalidDataException">The feed has no rail shapes, or lacks a required file or column.</exception>
+    public static NetworkScene Build(byte[] zipBytes, CityConfig config) => BuildLayer(zipBytes, config).Scene;
+
     /// <param name="zipBytes">The static GTFS archive.</param>
     /// <param name="config">The city being built.</param>
     /// <exception cref="InvalidDataException">The feed has no rail shapes, or lacks a required file or column.</exception>
-    public static NetworkScene Build(byte[] zipBytes, CityConfig config)
+    public static RailLayer BuildLayer(byte[] zipBytes, CityConfig config)
     {
         // Read the GTFS ZIP file and select the rail routes
         GtfsArchive archive = GtfsArchiveReader.Read(zipBytes);
@@ -57,13 +70,16 @@ public static class NetworkSceneBuilder
             CoreRadiusKm: config.Extent.CoreRadiusKm,
             SpanKm: Math.Round(MercatorProjector.PlaneMetresToGround(bounds.LongestSpan, centerLatitude) / 1000.0, 2));
 
-        return new NetworkScene(
+        NetworkScene scene = new(
             ArtifactVersion: ContentVersion(config.Id, zipBytes),
             City: new CityMetadata(config.Id, config.Name, config.Agency, config.Timezone),
             Extent: extent,
             Lines: BuildLines(selection, geoPointsByShapeId, planePointsByShapeId, bounds),
             Stations: [],
-            EdgeLabels: []);
+            EdgeLabels: [],
+            Water: []);
+
+        return new RailLayer(scene, bounds);
     }
 
     /// <summary>
