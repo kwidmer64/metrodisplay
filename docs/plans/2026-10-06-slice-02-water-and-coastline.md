@@ -123,7 +123,7 @@ spec keeps it from depending on the GTFS project. The name is `Spatial`, not `Ge
 NetTopologySuite's central type is `Geometry`, and a `MetroDisplay.Geometry` namespace would
 shadow it inside `MetroDisplay.Osm`. There is no new test; the existing 65 are the safety net.
 
-- [ ] **Step 1: Confirm the starting point**
+- [x] **Step 1: Confirm the starting point**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -131,7 +131,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: PASS, 65 tests (56 in `MetroDisplay.Gtfs.Static.Tests`, 9 in `MetroDisplay.Server.Tests`).
 
-- [ ] **Step 2: Create the projects and move the files**
+- [x] **Step 2: Create the projects and move the files**
 
 ```bash
 dotnet new classlib -o src/MetroDisplay.Spatial
@@ -150,7 +150,7 @@ for name in MercatorProjector GroundDistance ExtentRectangle CoordinateNormalize
 done
 ```
 
-- [ ] **Step 3: Rename the namespaces**
+- [x] **Step 3: Rename the namespaces**
 
 ```bash
 sed -i 's/^namespace MetroDisplay\.Gtfs\.Static\.Geometry;/namespace MetroDisplay.Spatial;/' src/MetroDisplay.Spatial/*.cs
@@ -166,7 +166,7 @@ grep -rn "Gtfs.Static.Geometry" src tests --include=*.cs
 
 Expected: no output.
 
-- [ ] **Step 4: Run the suite and confirm nothing changed but where tests live**
+- [x] **Step 4: Run the suite and confirm nothing changed but where tests live**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -175,7 +175,7 @@ dotnet test MetroDisplay.slnx
 Expected: PASS, still 65 tests: 20 in `MetroDisplay.Spatial.Tests`, 36 in
 `MetroDisplay.Gtfs.Static.Tests`, 9 in `MetroDisplay.Server.Tests`.
 
-- [ ] **Step 5: Record the project in spec §3**
+- [x] **Step 5: Record the project in spec §3**
 
 In the Projects block of `docs/specs/2026-09-22-metrodisplay-design.md`, add after the
 `MetroDisplay.Contracts` line:
@@ -184,7 +184,7 @@ In the Projects block of `docs/specs/2026-09-22-metrodisplay-design.md`, add aft
 MetroDisplay.Spatial        Projection, ground distance, bounds, normalization. Zero dependencies.
 ```
 
-- [ ] **Step 6: Hand off for commit**
+- [x] **Step 6: Hand off for commit**
 
 ```
 refactor: move shared geometry into Spatial

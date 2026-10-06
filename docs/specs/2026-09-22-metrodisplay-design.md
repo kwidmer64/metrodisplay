@@ -133,6 +133,7 @@ flowchart LR
 
 ```
 MetroDisplay.Contracts      Scene DTOs + city config schema. Zero dependencies.
+MetroDisplay.Spatial        Projection, ground distance, bounds, normalization. Zero dependencies.
 MetroDisplay.Gtfs.Static    Library. Builds versioned NetworkArtifacts.
 MetroDisplay.Realtime       GTFS-RT polling, protobuf decode, RT→static join.
 MetroDisplay.Osm            OpenStreetMap layers: fetch-once Overpass cache, water polygons.

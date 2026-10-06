@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using MetroDisplay.Contracts;
-using MetroDisplay.Gtfs.Static.Geometry;
+using MetroDisplay.Spatial;
 using MetroDisplay.Gtfs.Static.Reading;
 
 namespace MetroDisplay.Gtfs.Static.Pipeline;

@@ -1,4 +1,4 @@
-namespace MetroDisplay.Gtfs.Static.Geometry;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// Web Mercator (EPSG:3857). Conformal, so a network keeps its real shape at city scale.

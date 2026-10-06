@@ -1,4 +1,4 @@
-namespace MetroDisplay.Gtfs.Static.Geometry;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// Distances over the Earth's surface, for reporting real lengths. Never used for drawing.

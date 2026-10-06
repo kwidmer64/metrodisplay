@@ -1,7 +1,7 @@
-using MetroDisplay.Gtfs.Static.Geometry;
+using MetroDisplay.Spatial;
 using Xunit;
 
-namespace MetroDisplay.Gtfs.Static.Tests;
+namespace MetroDisplay.Spatial.Tests;
 
 public class CoordinateNormalizerTests
 {

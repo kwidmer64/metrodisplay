@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MetroDisplay.Contracts\MetroDisplay.Contracts.csproj" />
+    <ProjectReference Include="..\MetroDisplay.Spatial\MetroDisplay.Spatial.csproj" />
   </ItemGroup>
 
   <ItemGroup>

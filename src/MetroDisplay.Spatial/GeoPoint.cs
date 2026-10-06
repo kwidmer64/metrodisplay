@@ -1,4 +1,4 @@
-namespace MetroDisplay.Gtfs.Static.Geometry;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// A position on the globe.

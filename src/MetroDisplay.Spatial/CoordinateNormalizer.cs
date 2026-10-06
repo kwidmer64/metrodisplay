@@ -1,4 +1,4 @@
-namespace MetroDisplay.Gtfs.Static.Geometry;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// Maps plane coordinates into the normalized space the renderer draws. Both axes are divided

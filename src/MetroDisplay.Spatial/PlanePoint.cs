@@ -1,4 +1,4 @@
-namespace MetroDisplay.Gtfs.Static.Geometry;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// A projected position in Web Mercator plane units. Y grows northward.

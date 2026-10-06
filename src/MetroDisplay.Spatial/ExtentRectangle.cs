@@ -1,4 +1,4 @@
-namespace MetroDisplay.Gtfs.Static.Geometry;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// An axis-aligned rectangle in Web Mercator plane units: the part of the plane the map shows.
