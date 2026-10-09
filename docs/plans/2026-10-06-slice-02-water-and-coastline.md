@@ -1056,7 +1056,7 @@ direction.
 Fixtures sit at the equator, where a degree is about 111.2 km both ways and the plane equals
 the ground: a 0.002° square is 4.96 ha and a 0.001° square is 1.24 ha.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Osm.Tests/OsmWaterTests.cs`:
 
@@ -1132,6 +1132,39 @@ public class OsmWaterTests
     }
 
     [Fact]
+    public void SkipsAWaterWayTooShortToEncloseAnything()
+    {
+        // Out and back along one line: closed, but with no inside.
+        OsmWater water = From(new OverpassElement("way", Tags("natural", "water"), [new(0, 0), new(0, 0.002), new(0, 0)]));
+
+        Assert.Empty(water.InlandWater);
+    }
+
+    [Fact]
+    public void SkipsARelationWithNoOutline()
+    {
+        var relation = new OverpassElement("relation", Tags("natural", "water"), Points: null, Members:
+        [
+            new OverpassMember("way", "outer", [new(0.01, 0.01)]),
+            new OverpassMember("node", "label"),
+        ]);
+
+        Assert.Empty(From(relation).InlandWater);
+    }
+
+    [Fact]
+    public void RepairsAnOutlineThatCrossesItself()
+    {
+        // A bow tie: the outline crosses itself in the middle. Left as it is, clipping it fails.
+        OsmWater water = From(new OverpassElement("way", Tags("natural", "water"),
+            [new(0, 0), new(0.002, 0.002), new(0.002, 0), new(0, 0.002), new(0, 0)]));
+
+        Geometry area = Assert.Single(water.InlandWater);
+        Assert.True(area.IsValid);
+        Assert.False(area.IsEmpty);
+    }
+
+    [Fact]
     public void IgnoresElementsThatAreNotWater()
     {
         OsmWater water = From(
@@ -1167,6 +1200,12 @@ public class WaterLayerBuilderTests
     ];
 
     private static OverpassElement Lake(double south, double west, double sizeDegrees) => new("way", Water(), Ring(south, west, sizeDegrees));
+
+    /// <summary>A 0.004 degree square lake whose south shore bulges outward at its middle.</summary>
+    private static OverpassElement BumpedLake(double bumpDegrees) => new("way", Water(),
+    [
+        new(0, 0), new(-bumpDegrees, 0.002), new(0, 0.004), new(0.004, 0.004), new(0.004, 0), new(0, 0),
+    ]);
 
     /// <summary>Builds with the rail frame equal to the clip frame unless a test says otherwise.</summary>
     private static IReadOnlyList<WaterArea> Build(ExtentRectangle railBounds, params OverpassElement[] elements) =>
@@ -1231,21 +1270,42 @@ public class WaterLayerBuilderTests
     }
 
     [Fact]
-    public void SimplifiesADenseOutlineToItsCorners()
+    public void DropsABumpSmallerThanFifteenMetres()
     {
-        // A 0.004 degree square drawn with 50 points along each side.
-        const double size = 0.004;
-        const int stepsPerSide = 50;
-        var outline = new List<OverpassPoint>();
-        for (int step = 0; step < stepsPerSide; step++) outline.Add(new(0, size * step / stepsPerSide));
-        for (int step = 0; step < stepsPerSide; step++) outline.Add(new(size * step / stepsPerSide, size));
-        for (int step = 0; step < stepsPerSide; step++) outline.Add(new(size, size - size * step / stepsPerSide));
-        for (int step = 0; step < stepsPerSide; step++) outline.Add(new(size - size * step / stepsPerSide, 0));
-        outline.Add(new(0, 0));
-
-        WaterArea area = Assert.Single(Build(Frame, new OverpassElement("way", Water(), outline)));
+        // 0.00009 degrees is 10 m at the equator.
+        WaterArea area = Assert.Single(Build(Frame, BumpedLake(bumpDegrees: 0.00009)));
 
         Assert.Equal(8, area.Rings[0].Count);
+    }
+
+    [Fact]
+    public void KeepsABumpLargerThanFifteenMetres()
+    {
+        // 0.00036 degrees is 40 m at the equator.
+        WaterArea area = Assert.Single(Build(Frame, BumpedLake(bumpDegrees: 0.00036)));
+
+        Assert.Equal(10, area.Rings[0].Count);
+    }
+
+    [Fact]
+    public void MeasuresTheSimplifyToleranceOnTheGround()
+    {
+        // At 60 degrees north the plane is stretched to twice the ground. A 20 m bump on the
+        // plane is 10 m on the ground, under the tolerance, though it would stay at the equator.
+        var response = new OverpassResponse([BumpedLake(bumpDegrees: 0.00018)]);
+
+        Assert.Equal(10, Assert.Single(WaterLayerBuilder.Build(response, Frame, Frame, latitudeDegrees: 0)).Rings[0].Count);
+        Assert.Equal(8, Assert.Single(WaterLayerBuilder.Build(response, Frame, Frame, latitudeDegrees: 60)).Rings[0].Count);
+    }
+
+    [Fact]
+    public void MeasuresTheTwoHectaresOnTheGround()
+    {
+        // 4.96 ha on the plane is 1.24 ha on the ground at 60 degrees north, where areas are
+        // stretched fourfold.
+        var response = new OverpassResponse([Lake(0, 0, 0.002)]);
+
+        Assert.Empty(WaterLayerBuilder.Build(response, Frame, Frame, latitudeDegrees: 60));
     }
 
     [Fact]
@@ -1262,15 +1322,15 @@ public class WaterLayerBuilderTests
 }
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Osm.Tests --filter "FullyQualifiedName~OsmWaterTests|FullyQualifiedName~WaterLayerBuilderTests"
 ```
 
-Expected: build errors CS0246 and CS0103, `'OsmWater'` and `'WaterLayerBuilder'` not found.
+Expected: build error CS0246, `The type or namespace name 'OsmWater' could not be found`.
 
-- [ ] **Step 3: Write the assembler**
+- [x] **Step 3: Write the assembler**
 
 `src/MetroDisplay.Osm/OsmWater.cs`:
 
@@ -1359,7 +1419,7 @@ public sealed record OsmWater(IReadOnlyList<IReadOnlyList<PlanePoint>> Coastline
 }
 ```
 
-- [ ] **Step 4: Write the layer builder**
+- [x] **Step 4: Write the layer builder**
 
 `src/MetroDisplay.Osm/WaterLayerBuilder.cs`:
 
@@ -1437,23 +1497,23 @@ public static class WaterLayerBuilder
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Osm.Tests
 ```
 
-Expected: PASS, 35 tests (11 from Task 3, 11 from Task 4, 6 and 7 here).
+Expected: PASS, 41 tests (11 from Task 3, 11 from Task 4, 9 and 10 here).
 
-- [ ] **Step 6: Run the whole suite**
+- [x] **Step 6: Run the whole suite**
 
 ```bash
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 101 tests (20 Spatial, 37 Gtfs.Static, 35 Osm, 9 Server).
+Expected: PASS, 107 tests (20 Spatial, 37 Gtfs.Static, 41 Osm, 9 Server).
 
-- [ ] **Step 7: Hand off for commit**
+- [x] **Step 7: Hand off for commit**
 
 ```
 feat: build the water layer from OSM data
@@ -1900,7 +1960,7 @@ Expected: PASS, 17 tests.
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 109 tests (20 Spatial, 37 Gtfs.Static, 35 Osm, 17 Server).
+Expected: PASS, 115 tests (20 Spatial, 37 Gtfs.Static, 41 Osm, 17 Server).
 
 - [ ] **Step 11: Run it against the real Overpass**
 
@@ -2136,7 +2196,7 @@ other. OpenStreetMap is credited whenever water is drawn.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 109 tests.
+- `dotnet test MetroDisplay.slnx` passes with 115 tests.
 - `npm test` in `web/` passes with 7 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` running, `http://localhost:5173` shows Boston's rail over
   its filled harbour, rivers and lakes, with the OpenStreetMap credit.
