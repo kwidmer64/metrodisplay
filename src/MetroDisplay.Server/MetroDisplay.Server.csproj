@@ -3,6 +3,8 @@
   <ItemGroup>
     <ProjectReference Include="..\MetroDisplay.Contracts\MetroDisplay.Contracts.csproj" />
     <ProjectReference Include="..\MetroDisplay.Gtfs.Static\MetroDisplay.Gtfs.Static.csproj" />
+    <ProjectReference Include="..\MetroDisplay.Osm\MetroDisplay.Osm.csproj" />
+    <ProjectReference Include="..\MetroDisplay.Spatial\MetroDisplay.Spatial.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

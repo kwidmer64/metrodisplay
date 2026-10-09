@@ -6,6 +6,12 @@ using MetroDisplay.Server.Feeds;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("overpass", client =>
+{
+    // The first fetch for a city can take most of a minute; Overpass asks callers to say who they are.
+    client.Timeout = TimeSpan.FromMinutes(3);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("MetroDisplay/0.1");
+});
 
 var app = builder.Build();
 
@@ -23,10 +29,10 @@ byte[] zipBytes = await feedCache.GetAsync(config.Id, config.StaticFeed);
 
 // The cached file is trusted on every start, so a bad one (a captive-portal page, an
 // interrupted download) would fail every start. Name it, and say how to recover.
-NetworkScene scene;
+RailLayer rail;
 try
 {
-    scene = NetworkSceneBuilder.Build(zipBytes, config);
+    rail = NetworkSceneBuilder.BuildLayer(zipBytes, config);
 }
 catch (InvalidDataException exception)
 {
@@ -35,7 +41,20 @@ catch (InvalidDataException exception)
         exception);
 }
 
-app.Logger.LogInformation("Built {ArtifactVersion}: {LineCount} lines, {ShapeCount} shapes", scene.ArtifactVersion, scene.Lines.Count, scene.Lines.Sum(line => line.Shapes.Count));
+// Water is fetched once per city and then kept. It never stops startup.
+OsmLayerCache osmCache = new(
+    app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("overpass"),
+    Path.GetFullPath(Path.Combine(contentRoot, settings.OsmCacheDirectory)),
+    settings.OverpassUrl);
+IReadOnlyList<WaterArea> water = await WaterLayerLoader.LoadAsync(osmCache, config, rail.Bounds, app.Logger);
+NetworkScene scene = rail.Scene with { Water = water };
+
+app.Logger.LogInformation(
+    "Built {ArtifactVersion}: {LineCount} lines, {ShapeCount} shapes, {WaterCount} water areas",
+    scene.ArtifactVersion,
+    scene.Lines.Count,
+    scene.Lines.Sum(line => line.Shapes.Count),
+    scene.Water.Count);
 
 app.MapGet("/api/network", () => TypedResults.Json(scene, JsonDefaults.Options));
 

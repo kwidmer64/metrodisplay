@@ -1551,13 +1551,13 @@ the rail's frame so both layers line up.
 The cache takes a layer name so slice 7's place names get their own file
 (`<cityId>-places.json`) and never refetch water.
 
-- [ ] **Step 1: Reference the new projects**
+- [x] **Step 1: Reference the new projects**
 
 ```bash
 dotnet add src/MetroDisplay.Server reference src/MetroDisplay.Osm/MetroDisplay.Osm.csproj src/MetroDisplay.Spatial/MetroDisplay.Spatial.csproj
 ```
 
-- [ ] **Step 2: Write the failing cache tests**
+- [x] **Step 2: Write the failing cache tests**
 
 `tests/MetroDisplay.Server.Tests/OsmLayerCacheTests.cs`:
 
@@ -1654,7 +1654,7 @@ public class OsmLayerCacheTests
 }
 ```
 
-- [ ] **Step 3: Run the tests and confirm they fail**
+- [x] **Step 3: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~OsmLayerCacheTests"
@@ -1662,7 +1662,7 @@ dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~OsmLaye
 
 Expected: build error CS0246, `The type or namespace name 'OsmLayerCache' could not be found`.
 
-- [ ] **Step 4: Write the cache**
+- [x] **Step 4: Write the cache**
 
 `src/MetroDisplay.Server/Feeds/OsmLayerCache.cs`:
 
@@ -1723,7 +1723,7 @@ public sealed class OsmLayerCache(HttpClient httpClient, string cacheDirectory, 
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~OsmLayerCacheTests"
@@ -1731,7 +1731,7 @@ dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~OsmLaye
 
 Expected: PASS, 5 tests.
 
-- [ ] **Step 6: Write the failing endpoint tests**
+- [x] **Step 6: Write the failing endpoint tests**
 
 In `tests/MetroDisplay.Server.Tests/NetworkEndpointTests.cs`:
 
@@ -1827,7 +1827,7 @@ Add a helper and three tests:
     }
 ```
 
-- [ ] **Step 7: Run the tests and confirm they fail**
+- [x] **Step 7: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~NetworkEndpointTests"
@@ -1837,7 +1837,7 @@ Expected: `ServesWaterBesideTheLines` FAILS with `Assert.Single() Failure: The c
 (the scene's `water` is always `[]`). The other two new tests pass already for the same
 reason; they are there to stay green once water is wired in.
 
-- [ ] **Step 8: Wire water into startup**
+- [x] **Step 8: Wire water into startup**
 
 `src/MetroDisplay.Server/ServerSettings.cs`: add two `<param>` lines and two parameters.
 
@@ -1946,23 +1946,29 @@ app.Logger.LogInformation(
 
 Keep the existing comment above the `try` about the cached feed.
 
-- [ ] **Step 9: Run the Server tests and confirm they pass**
+- [x] **Step 9: Run the Server tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests
 ```
 
-Expected: PASS, 17 tests.
+Expected: PASS, 19 tests. Two were added after a gap check found nothing pinned the query
+sent, the named client and its User-Agent, the frame water is normalized in, or the file
+named in the warning: `FetchesWaterFromOverpassOnTheFirstStartAndKeepsIt` in
+`NetworkEndpointTests.cs` (a stub handler stands in for Overpass through
+`ConfigureTestServices`) and `WarnsWithTheFileToDeleteWhenTheCachedLayerCannotBeRead` in a
+new `WaterLayerLoaderTests.cs`. `ServesWaterBesideTheLines` also asserts the pond spans
+0.3333 to 0.5 across the rail's frame.
 
-- [ ] **Step 10: Run the whole suite**
+- [x] **Step 10: Run the whole suite**
 
 ```bash
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 115 tests (20 Spatial, 37 Gtfs.Static, 41 Osm, 17 Server).
+Expected: PASS, 117 tests (20 Spatial, 37 Gtfs.Static, 41 Osm, 19 Server).
 
-- [ ] **Step 11: Run it against the real Overpass**
+- [x] **Step 11: Run it against the real Overpass**
 
 ```bash
 dotnet run --project src/MetroDisplay.Server
@@ -1970,20 +1976,20 @@ dotnet run --project src/MetroDisplay.Server
 
 Expected: the first run takes 15 to 60 seconds, writes about 13.6 MB to
 `.cache/osm/mbta-water.json`, and logs
-`Built mbta@<8 hex>: 8 lines, 65 shapes, 254 water areas`. The water count was measured on
-2026-10-06 and will drift as OSM is edited. From a second terminal:
+`Built mbta@<8 hex>: 8 lines, 67 shapes, 254 water areas`. The counts were measured on
+2026-10-08 and will drift as the feed and OSM are edited. From a second terminal:
 
 ```bash
 curl -s http://localhost:5180/api/network | wc -c
 ```
 
-Expected: about 425,000 bytes (about 246 KB of rail plus about 179 KB of water). Stop the
+Expected: about 438,000 bytes, rail and water together. Stop the
 Server and run it again: it starts in a few seconds without fetching, and logs the same line.
 
 If Overpass is busy, the Server still starts and logs `Starting without water: …`. Run it
 again later; nothing was cached.
 
-- [ ] **Step 12: Hand off for commit**
+- [x] **Step 12: Hand off for commit**
 
 ```
 feat: fetch water once and serve it with the scene
@@ -2196,7 +2202,7 @@ other. OpenStreetMap is credited whenever water is drawn.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 115 tests.
+- `dotnet test MetroDisplay.slnx` passes with 117 tests.
 - `npm test` in `web/` passes with 7 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` running, `http://localhost:5173` shows Boston's rail over
   its filled harbour, rivers and lakes, with the OpenStreetMap credit.
