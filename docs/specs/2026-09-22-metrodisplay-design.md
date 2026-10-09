@@ -682,8 +682,8 @@ Moved ahead of the generated types and the extent on 2026-09-28. Its design sett
   (`.cache/osm/<cityId>-water.json`) on the first start and kept for good: coastlines change
   on a scale of years, so unlike the GTFS feed it is never refreshed. Delete the file to
   fetch again. Adding a city stays a config file.
-- **Fill.** Water is filled. Coastline ways are joined into chains and closed along the map
-  edge into sea polygons (OSM keeps land on the left). Lakes and rivers come from
+- **Fill.** Water is filled. Coastline ways are overlaid on the map edge and closed along it
+  into sea polygons (OSM keeps land on the left). Lakes and rivers come from
   `natural=water` and `waterway=riverbank` ways and multipolygon relations, with islands as
   holes. Geometry uses NetTopologySuite; the coastline closing is ours.
 - **Frame.** Water is clipped to the square of core ± `coreRadiusKm`, the frame slice 4 gives

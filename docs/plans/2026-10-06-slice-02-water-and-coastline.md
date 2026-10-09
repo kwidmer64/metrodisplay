@@ -4,8 +4,8 @@
 data fetched once and kept.
 
 **Architecture:** A new `MetroDisplay.Osm` library turns a raw Overpass response into
-`WaterArea`s: it joins coastline ways into chains, closes them along the frame's edge into
-sea polygons, assembles lakes and rivers, clips, filters, simplifies and normalizes. The
+`WaterArea`s: it overlays coastline ways on the frame's edge and closes them into sea
+polygons, assembles lakes and rivers, clips, filters, simplifies and normalizes. The
 Server fetches the response once per city into `.cache/osm/`, builds the layer in the rail
 network's frame, and adds it to the scene. Water never stops startup: any failure yields a
 map without water. The renderer fills each area before it strokes the lines.
@@ -47,8 +47,8 @@ pinned test in the task that owns the code.
 1. **Coastline drawn the other way round.** OSM keeps land on the left of a way's direction.
    Reading it backwards floods the land and dries the sea.
    → `PutsTheSeaWestOfASouthboundCoast` (Task 4)
-2. **Coastline split into many ways, in any order.** Boston's shore arrives as 413 ways that
-   join into 136 chains. → `JoinsWaysThatArriveOutOfOrder` (Task 4)
+2. **Coastline split into many ways, in any order.** Boston's shore arrives as 413 ways,
+   and they must meet up whatever order they come in. → `ClosesACoastSplitIntoWaysInAnyOrder` (Task 4)
 3. **Overpass answering 200 with a `remark`.** That is how it reports a query that timed out,
    with partial or no data. Caching it would lose the water for good.
    → `CachesNothingWhenOverpassReportsARemark` (Task 6)
@@ -739,15 +739,17 @@ is written with invariant numbers so it means the same everywhere.
   (`NetTopologySuite.Geometries.Polygon`), every polygon inside the frame.
 
 How it works. OSM coastline is a set of open ways with **land on the left** of their
-direction. The ways are joined end to start into chains, keeping that direction. The chains,
-cut to the frame, are overlaid with the frame's edge and polygonized, which splits the frame
-into faces: some land, some sea. To tell which is which, every coastline segment inside the
+direction. The ways, cut to the frame, are overlaid with the frame's edge and polygonized,
+which splits the frame into faces: some land, some sea. The overlay joins ways wherever they
+share an end point, so they need no stitching first: joining them into chains beforehand
+gave byte-identical output on the real Boston response. To tell which is which, every coastline segment inside the
 frame drops two probes half a plane unit either side of its midpoint: the one on its right is
 in the sea, the one on its left is on land. A face is sea when more sea probes than land
-probes fall in it. The probes come from the original chains, never from the clipped pieces,
-because clipping does not promise to keep a line's direction.
+probes fall in it, and a face no probe reaches stays land. The probes come from the original
+ways, never from the clipped pieces, because clipping does not promise to keep a line's
+direction.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Osm.Tests/CoastlineCloserTests.cs`:
 
@@ -790,7 +792,7 @@ public class CoastlineCloserTests
     }
 
     [Fact]
-    public void JoinsWaysThatArriveOutOfOrder()
+    public void ClosesACoastSplitIntoWaysInAnyOrder()
     {
         IReadOnlyList<Polygon> sea = CoastlineCloser.CloseSea(
             [Way((50, 40), (50, 110)), Way((50, -10), (50, 40))], Frame);
@@ -803,7 +805,7 @@ public class CoastlineCloserTests
     [Fact]
     public void LeavesAnIslandAsAHoleInTheSea()
     {
-        // A closed chain running counter-clockwise keeps its land, the inside, on the left.
+        // A closed way running counter-clockwise keeps its land, the inside, on the left.
         IReadOnlyList<Polygon> sea = CoastlineCloser.CloseSea(
             [Way((40, 40), (60, 40), (60, 60), (40, 60), (40, 40))], Frame);
 
@@ -836,6 +838,38 @@ public class CoastlineCloserTests
     }
 
     [Fact]
+    public void TreatsAFaceNoProbeReachesAsLand()
+    {
+        // A second coast cuts the north-east corner, heading south-east with its land on the
+        // corner side. Its one segment is so long that its midpoint lies outside the frame, so
+        // it drops no probes and the corner gets no votes either way.
+        IReadOnlyList<Polygon> sea = CoastlineCloser.CloseSea(
+            [Way((50, -10), (50, 110)), Way((60, 130), (260, -70))], Frame);
+
+        Polygon area = Assert.Single(sea);
+        Assert.Equal(5000 - 50, area.Area, precision: 6);
+        Assert.False(area.Contains(At(98, 98)));
+    }
+
+    [Fact]
+    public void IgnoresAWayTooShortToBeALine()
+    {
+        IReadOnlyList<Polygon> sea = CoastlineCloser.CloseSea(
+            [Way(), Way((20, 20)), Way((50, -10), (50, 110))], Frame);
+
+        Assert.Equal(5000, Assert.Single(sea).Area, precision: 6);
+    }
+
+    [Fact]
+    public void ToleratesAPointRepeatedAlongAWay()
+    {
+        IReadOnlyList<Polygon> sea = CoastlineCloser.CloseSea(
+            [Way((50, -10), (50, 40), (50, 40), (50, 110))], Frame);
+
+        Assert.Equal(5000, Assert.Single(sea).Area, precision: 6);
+    }
+
+    [Fact]
     public void FindsNoSeaWithoutACoastline()
     {
         Assert.Empty(CoastlineCloser.CloseSea([], Frame));
@@ -849,7 +883,7 @@ public class CoastlineCloserTests
 }
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Osm.Tests --filter "FullyQualifiedName~CoastlineCloserTests"
@@ -857,7 +891,7 @@ dotnet test tests/MetroDisplay.Osm.Tests --filter "FullyQualifiedName~CoastlineC
 
 Expected: build error CS0103, `The name 'CoastlineCloser' does not exist in the current context`.
 
-- [ ] **Step 3: Write the closer**
+- [x] **Step 3: Write the closer**
 
 `src/MetroDisplay.Osm/CoastlineCloser.cs`:
 
@@ -897,10 +931,17 @@ public static class CoastlineCloser
         var linework = new List<Geometry> { frameArea.Boundary };
         var seaProbes = new List<Coordinate>();
         var landProbes = new List<Coordinate>();
-        foreach (List<Coordinate> chain in JoinWays(coastlineWays))
+        foreach (IReadOnlyList<PlanePoint> way in coastlineWays)
         {
-            linework.Add(Factory.CreateLineString(chain.ToArray()).Intersection(frameArea));
-            AddSideProbes(chain, frameEnvelope, seaProbes, landProbes);
+            // A line needs two points. Anything shorter borders nothing.
+            if (way.Count < 2)
+            {
+                continue;
+            }
+
+            Coordinate[] line = way.Select(point => new Coordinate(point.X, point.Y)).ToArray();
+            linework.Add(Factory.CreateLineString(line).Intersection(frameArea));
+            AddSideProbes(line, frameEnvelope, seaProbes, landProbes);
         }
 
         if (seaProbes.Count == 0)
@@ -908,69 +949,28 @@ public static class CoastlineCloser
             return [];
         }
 
-        // Overlaying the coastline on the frame's edge splits the frame into faces.
+        // Overlaying the coastline on the frame's edge splits the frame into faces. The union
+        // also joins ways that meet end to end, in whatever order they arrived.
         var polygonizer = new Polygonizer();
         polygonizer.Add(Factory.BuildGeometry(linework).Union());
         List<Polygon> faces = polygonizer.GetPolygons().Cast<Polygon>().ToList();
 
         int[] seaVotes = CountProbesPerFace(faces, seaProbes);
         int[] landVotes = CountProbesPerFace(faces, landProbes);
+        // A face no probe reaches stays land: leaving water out is the quieter mistake.
         return faces.Where((_, faceNumber) => seaVotes[faceNumber] > landVotes[faceNumber]).ToList();
     }
 
     /// <summary>
-    /// Joins ways end to start into chains, keeping each way's direction. A chain whose ends
-    /// meet is an island.
-    /// </summary>
-    private static List<List<Coordinate>> JoinWays(IReadOnlyList<IReadOnlyList<PlanePoint>> ways)
-    {
-        List<List<Coordinate>> remaining = ways
-            .Where(way => way.Count >= 2)
-            .Select(way => way.Select(point => new Coordinate(point.X, point.Y)).ToList())
-            .ToList();
-
-        var chains = new List<List<Coordinate>>();
-        while (remaining.Count > 0)
-        {
-            List<Coordinate> chain = remaining[0];
-            remaining.RemoveAt(0);
-
-            bool extended = true;
-            while (extended && !chain[0].Equals2D(chain[^1]))
-            {
-                extended = false;
-                int next = remaining.FindIndex(way => way[0].Equals2D(chain[^1]));
-                if (next >= 0)
-                {
-                    chain.AddRange(remaining[next].Skip(1));
-                    remaining.RemoveAt(next);
-                    extended = true;
-                    continue;
-                }
-
-                int previous = remaining.FindIndex(way => way[^1].Equals2D(chain[0]));
-                if (previous >= 0)
-                {
-                    chain.InsertRange(0, remaining[previous].SkipLast(1));
-                    remaining.RemoveAt(previous);
-                    extended = true;
-                }
-            }
-            chains.Add(chain);
-        }
-        return chains;
-    }
-
-    /// <summary>
-    /// For every segment of a chain inside the frame, one probe just to its right (sea) and one
+    /// For every segment of a way inside the frame, one probe just to its right (sea) and one
     /// just to its left (land).
     /// </summary>
-    private static void AddSideProbes(List<Coordinate> chain, Envelope frameEnvelope, List<Coordinate> seaProbes, List<Coordinate> landProbes)
+    private static void AddSideProbes(Coordinate[] line, Envelope frameEnvelope, List<Coordinate> seaProbes, List<Coordinate> landProbes)
     {
-        for (int index = 1; index < chain.Count; index++)
+        for (int index = 1; index < line.Length; index++)
         {
-            Coordinate start = chain[index - 1];
-            Coordinate end = chain[index];
+            Coordinate start = line[index - 1];
+            Coordinate end = line[index];
             double length = start.Distance(end);
             var middle = new Coordinate((start.X + end.X) / 2, (start.Y + end.Y) / 2);
             if (length == 0 || !frameEnvelope.Contains(middle))
@@ -1015,22 +1015,23 @@ public static class CoastlineCloser
 }
 ```
 
-- [ ] **Step 4: Run the tests and confirm they pass**
+- [x] **Step 4: Run the tests and confirm they pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Osm.Tests --filter "FullyQualifiedName~CoastlineCloserTests"
 ```
 
-Expected: PASS, 8 tests.
+Expected: PASS, 11 tests.
 
-- [ ] **Step 5: Hand off for commit**
+- [x] **Step 5: Hand off for commit**
 
 ```
 feat: close OSM coastline into sea polygons
 
-Coastline ways are joined into chains and overlaid on the frame's
-edge. Each face is sea or land by which side of the coastline it
-lies on: OSM keeps land on the left of a way's direction.
+Coastline ways are overlaid on the frame's edge, which splits the
+frame into faces. Each face is sea or land by which side of the
+coastline it lies on: OSM keeps land on the left of a way's
+direction.
 ```
 
 ---
@@ -1442,7 +1443,7 @@ public static class WaterLayerBuilder
 dotnet test tests/MetroDisplay.Osm.Tests
 ```
 
-Expected: PASS, 32 tests (11 from Task 3, 8 from Task 4, 6 and 7 here).
+Expected: PASS, 35 tests (11 from Task 3, 11 from Task 4, 6 and 7 here).
 
 - [ ] **Step 6: Run the whole suite**
 
@@ -1450,7 +1451,7 @@ Expected: PASS, 32 tests (11 from Task 3, 8 from Task 4, 6 and 7 here).
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 98 tests (20 Spatial, 37 Gtfs.Static, 32 Osm, 9 Server).
+Expected: PASS, 101 tests (20 Spatial, 37 Gtfs.Static, 35 Osm, 9 Server).
 
 - [ ] **Step 7: Hand off for commit**
 
@@ -1899,7 +1900,7 @@ Expected: PASS, 17 tests.
 dotnet test MetroDisplay.slnx
 ```
 
-Expected: PASS, 106 tests (20 Spatial, 37 Gtfs.Static, 32 Osm, 17 Server).
+Expected: PASS, 109 tests (20 Spatial, 37 Gtfs.Static, 35 Osm, 17 Server).
 
 - [ ] **Step 11: Run it against the real Overpass**
 
@@ -2135,7 +2136,7 @@ other. OpenStreetMap is credited whenever water is drawn.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 106 tests.
+- `dotnet test MetroDisplay.slnx` passes with 109 tests.
 - `npm test` in `web/` passes with 7 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` running, `http://localhost:5173` shows Boston's rail over
   its filled harbour, rivers and lakes, with the OpenStreetMap credit.
