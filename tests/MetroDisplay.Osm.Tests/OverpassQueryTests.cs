@@ -1,4 +1,5 @@
 using System.Globalization;
+using MetroDisplay.Spatial;
 using Xunit;
 
 namespace MetroDisplay.Osm.Tests;

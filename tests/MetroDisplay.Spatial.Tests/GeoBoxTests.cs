@@ -1,7 +1,6 @@
-using MetroDisplay.Spatial;
 using Xunit;
 
-namespace MetroDisplay.Osm.Tests;
+namespace MetroDisplay.Spatial.Tests;
 
 public class GeoBoxTests
 {

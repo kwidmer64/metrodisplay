@@ -1,6 +1,4 @@
-using MetroDisplay.Spatial;
-
-namespace MetroDisplay.Osm;
+namespace MetroDisplay.Spatial;
 
 /// <summary>
 /// A box of latitude and longitude, as Overpass takes its search area.

@@ -1,4 +1,5 @@
 using System.Globalization;
+using MetroDisplay.Spatial;
 
 namespace MetroDisplay.Osm;
 
