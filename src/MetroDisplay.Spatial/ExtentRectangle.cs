@@ -20,6 +20,28 @@ public readonly record struct ExtentRectangle(double MinX, double MinY, double M
     public double Aspect => Height == 0 ? 1.0 : Width / Height;
 
     /// <summary>
+    /// The part of the plane both rectangles cover.
+    /// </summary>
+    /// <returns>
+    /// The overlap, or <c>null</c> when the rectangles share no point. Rectangles that share
+    /// only an edge or a corner overlap in a rectangle of no width or no height.
+    /// </returns>
+    public ExtentRectangle? Intersect(ExtentRectangle other)
+    {
+        double minX = Math.Max(MinX, other.MinX);
+        double minY = Math.Max(MinY, other.MinY);
+        double maxX = Math.Min(MaxX, other.MaxX);
+        double maxY = Math.Min(MaxY, other.MaxY);
+
+        if (minX > maxX || minY > maxY)
+        {
+            return null;
+        }
+
+        return new ExtentRectangle(minX, minY, maxX, maxY);
+    }
+
+    /// <summary>
     /// The smallest rectangle containing every point.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="points"/> is empty.</exception>

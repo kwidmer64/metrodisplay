@@ -56,4 +56,18 @@ public class MercatorProjectorTests
     {
         Assert.Equal(1000, MercatorProjector.PlaneMetresToGround(1000, latitudeDegrees: 0), precision: 6);
     }
+
+    [Theory]
+    [InlineData(42.3555, -71.0605)]
+    [InlineData(-33.87, 151.21)]
+    [InlineData(60.17, 24.94)]
+    [InlineData(0, 0)]
+    public void UnprojectsBackToWhereAPointCameFrom(double latitude, double longitude)
+    {
+        // Eleven decimal places of a degree is about a micrometre on the ground.
+        GeoPoint returned = MercatorProjector.Unproject(MercatorProjector.Project(new GeoPoint(latitude, longitude)));
+
+        Assert.Equal(latitude, returned.Latitude, precision: 11);
+        Assert.Equal(longitude, returned.Longitude, precision: 11);
+    }
 }

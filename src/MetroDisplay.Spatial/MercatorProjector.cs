@@ -11,6 +11,7 @@ public static class MercatorProjector
     /// </summary>
     private const double EarthRadiusM = 6378137.0;
     private const double DegreesToRadians = Math.PI / 180.0;
+    private const double RadiansToDegrees = 180.0 / Math.PI;
 
     /// <summary>
     /// Implements the standard Web Mercator projection equation.
@@ -24,6 +25,17 @@ public static class MercatorProjector
         double latitudeRadians = point.Latitude * DegreesToRadians;
         double northingM = EarthRadiusM * Math.Log(Math.Tan(Math.PI / 4.0 + latitudeRadians / 2.0));
         return new PlanePoint(eastingM, northingM);
+    }
+
+    /// <summary>
+    /// The inverse of <see cref="Project"/>: the position on the globe a plane point stands for.
+    /// </summary>
+    /// <param name="point">A point in Web Mercator plane units.</param>
+    public static GeoPoint Unproject(PlanePoint point)
+    {
+        double longitude = point.X / EarthRadiusM * RadiansToDegrees;
+        double latitude = (2.0 * Math.Atan(Math.Exp(point.Y / EarthRadiusM)) - Math.PI / 2.0) * RadiansToDegrees;
+        return new GeoPoint(latitude, longitude);
     }
 
     /// <summary>

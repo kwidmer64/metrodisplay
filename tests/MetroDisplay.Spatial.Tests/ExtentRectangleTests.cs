@@ -42,4 +42,42 @@ public class ExtentRectangleTests
     {
         Assert.Throws<ArgumentException>(() => ExtentRectangle.Enclosing([]));
     }
+
+    [Fact]
+    public void IntersectsToTheAreaBothRectanglesCover()
+    {
+        var first = new ExtentRectangle(MinX: 0, MinY: 0, MaxX: 100, MaxY: 100);
+        var second = new ExtentRectangle(MinX: 60, MinY: -20, MaxX: 140, MaxY: 70);
+
+        Assert.Equal(new ExtentRectangle(MinX: 60, MinY: 0, MaxX: 100, MaxY: 70), first.Intersect(second));
+        Assert.Equal(first.Intersect(second), second.Intersect(first));
+    }
+
+    [Fact]
+    public void IntersectsToTheSmallerRectangleWhenItLiesInsideTheOther()
+    {
+        var outer = new ExtentRectangle(MinX: 0, MinY: 0, MaxX: 100, MaxY: 100);
+        var inner = new ExtentRectangle(MinX: 20, MinY: 30, MaxX: 40, MaxY: 50);
+
+        Assert.Equal(inner, outer.Intersect(inner));
+        Assert.Equal(inner, inner.Intersect(outer));
+    }
+
+    [Fact]
+    public void HasNoIntersectionWithARectangleItDoesNotReach()
+    {
+        var first = new ExtentRectangle(MinX: 0, MinY: 0, MaxX: 100, MaxY: 100);
+
+        Assert.Null(first.Intersect(new ExtentRectangle(MinX: 101, MinY: 0, MaxX: 200, MaxY: 100)));
+        Assert.Null(first.Intersect(new ExtentRectangle(MinX: 0, MinY: -50, MaxX: 100, MaxY: -1)));
+    }
+
+    [Fact]
+    public void IntersectsRectanglesThatShareOnlyAnEdgeInALineOfNoWidth()
+    {
+        var first = new ExtentRectangle(MinX: 0, MinY: 0, MaxX: 100, MaxY: 100);
+        var second = new ExtentRectangle(MinX: 100, MinY: 20, MaxX: 200, MaxY: 60);
+
+        Assert.Equal(new ExtentRectangle(MinX: 100, MinY: 20, MaxX: 100, MaxY: 60), first.Intersect(second));
+    }
 }
