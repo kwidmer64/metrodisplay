@@ -131,7 +131,7 @@ This is a move, not a change. `Gtfs.Static` needs the core square, and it must n
 `Osm`. Both already depend on `Spatial`. There is no new test; the two `GeoBoxTests` move with
 the type and the rest of the suite is the safety net.
 
-- [ ] **Step 1: Confirm the starting point**
+- [x] **Step 1: Confirm the starting point**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -139,7 +139,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: 119 passed, 0 failed, 0 warnings.
 
-- [ ] **Step 2: Move the tests first**
+- [x] **Step 2: Move the tests first**
 
 ```bash
 mv tests/MetroDisplay.Osm.Tests/GeoBoxTests.cs tests/MetroDisplay.Spatial.Tests/GeoBoxTests.cs
@@ -162,7 +162,7 @@ using Xunit;
 namespace MetroDisplay.Spatial.Tests;
 ```
 
-- [ ] **Step 3: Run to see it fail**
+- [x] **Step 3: Run to see it fail**
 
 ```bash
 dotnet build tests/MetroDisplay.Spatial.Tests
@@ -170,7 +170,7 @@ dotnet build tests/MetroDisplay.Spatial.Tests
 
 Expected: error CS0246, the type or namespace `GeoBox` could not be found.
 
-- [ ] **Step 4: Move the type**
+- [x] **Step 4: Move the type**
 
 ```bash
 mv src/MetroDisplay.Osm/GeoBox.cs src/MetroDisplay.Spatial/GeoBox.cs
@@ -190,7 +190,7 @@ with:
 namespace MetroDisplay.Spatial;
 ```
 
-- [ ] **Step 5: Point the two files that lose sight of it at the new namespace**
+- [x] **Step 5: Point the two files that lose sight of it at the new namespace**
 
 `src/MetroDisplay.Osm/OverpassQuery.cs`: the usings become
 
@@ -211,7 +211,7 @@ Every other file that names `GeoBox` already imports `MetroDisplay.Spatial`:
 `WaterLayerLoader.cs`, `WaterLayerBuilderTests.cs`, `WaterLayerLoaderTests.cs`,
 `NetworkEndpointTests.cs`.
 
-- [ ] **Step 6: Run everything**
+- [x] **Step 6: Run everything**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -219,7 +219,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: 119 passed (Spatial 22, Gtfs.Static 37, Osm 40, Server 20), 0 warnings.
 
-- [ ] **Step 7: Keep the spec's project list true**
+- [x] **Step 7: Keep the spec's project list true**
 
 ```bash
 grep -n "GeoBox" docs/specs/2026-09-22-metrodisplay-design.md
@@ -228,7 +228,7 @@ grep -n "GeoBox" docs/specs/2026-09-22-metrodisplay-design.md
 If §3 lists `GeoBox` among `Osm`'s types, move the name to the `Spatial` line. If it is not
 mentioned, change nothing.
 
-- [ ] **Step 8: Hand off**
+- [x] **Step 8: Hand off**
 
 ```
 refactor: move GeoBox into Spatial
@@ -258,7 +258,7 @@ Gtfs.Static must not depend on Osm.
 `Unproject` exists because a cut point is found on the plane, and a run's ground length is
 measured between positions on the globe.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `ExtentRectangleTests`:
 
@@ -320,7 +320,7 @@ Add to `MercatorProjectorTests`:
     }
 ```
 
-- [ ] **Step 2: Run to see them fail**
+- [x] **Step 2: Run to see them fail**
 
 ```bash
 dotnet build tests/MetroDisplay.Spatial.Tests
@@ -329,7 +329,7 @@ dotnet build tests/MetroDisplay.Spatial.Tests
 Expected: error CS1061, `ExtentRectangle` has no definition for `Intersect`, and error CS0117,
 `MercatorProjector` has no definition for `Unproject`.
 
-- [ ] **Step 3: Write `Intersect`**
+- [x] **Step 3: Write `Intersect`**
 
 In `ExtentRectangle.cs`, after the `Aspect` property:
 
@@ -357,7 +357,7 @@ In `ExtentRectangle.cs`, after the `Aspect` property:
     }
 ```
 
-- [ ] **Step 4: Write `Unproject`**
+- [x] **Step 4: Write `Unproject`**
 
 In `MercatorProjector.cs`, after `Project`:
 
@@ -380,7 +380,7 @@ and beside the `DegreesToRadians` constant at the top of the class:
     private const double RadiansToDegrees = 180.0 / Math.PI;
 ```
 
-- [ ] **Step 5: Run to see them pass**
+- [x] **Step 5: Run to see them pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Spatial.Tests
@@ -388,7 +388,7 @@ dotnet test tests/MetroDisplay.Spatial.Tests
 
 Expected: 30 passed.
 
-- [ ] **Step 6: Hand off**
+- [x] **Step 6: Hand off**
 
 ```
 feat: intersect rectangles and unproject plane points
@@ -427,7 +427,7 @@ Two details keep the output honest:
   A repeated point, a segment of no length, is kept when it is inside, because the source
   data has them and an untouched line must stay untouched.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Spatial.Tests/PolylineClipperTests.cs`:
 
@@ -558,7 +558,7 @@ public class PolylineClipperTests
 }
 ```
 
-- [ ] **Step 2: Run to see them fail**
+- [x] **Step 2: Run to see them fail**
 
 ```bash
 dotnet build tests/MetroDisplay.Spatial.Tests
@@ -566,7 +566,7 @@ dotnet build tests/MetroDisplay.Spatial.Tests
 
 Expected: error CS0103, the name `PolylineClipper` does not exist.
 
-- [ ] **Step 3: Write the clipper**
+- [x] **Step 3: Write the clipper**
 
 `src/MetroDisplay.Spatial/PolylineClipper.cs`:
 
@@ -704,7 +704,7 @@ public static class PolylineClipper
 }
 ```
 
-- [ ] **Step 4: Run to see them pass**
+- [x] **Step 4: Run to see them pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Spatial.Tests
@@ -712,7 +712,7 @@ dotnet test tests/MetroDisplay.Spatial.Tests
 
 Expected: 43 passed.
 
-- [ ] **Step 5: Hand off**
+- [x] **Step 5: Hand off**
 
 ```
 feat: clip polylines to a rectangle
@@ -756,7 +756,7 @@ The error is an `InvalidOperationException`, not the `InvalidDataException` the 
 throw. `Program.cs` catches `InvalidDataException` and adds advice to delete the cached feed,
 which would be wrong here: the feed is fine and the config is not.
 
-- [ ] **Step 1: Save today's output for Task 5**
+- [x] **Step 1: Save today's output for Task 5**
 
 Before any change in this task, with the working tree as Task 3 left it:
 
@@ -773,7 +773,7 @@ curl -s http://localhost:5180/api/network -o .superpowers/sdd/2026-10-11-slice-0
 
 Stop the Server with Ctrl+C. `.superpowers/` is gitignored, so the file stays out of the commit.
 
-- [ ] **Step 2: Write the failing builder tests**
+- [x] **Step 2: Write the failing builder tests**
 
 Add `using System.Globalization;` to the usings of `NetworkSceneBuilderTests.cs`, and these
 tests to the class:
@@ -887,7 +887,7 @@ tests to the class:
     }
 ```
 
-- [ ] **Step 3: Run to see them fail**
+- [x] **Step 3: Run to see them fail**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests --filter "FullyQualifiedName~NetworkSceneBuilderTests"
@@ -897,7 +897,7 @@ Expected: the five new tests fail. `CutsShapesAtTheEdgeOfTheCoreSquare` reports 
 that differ and an aspect of 1.1087; the two `Refuses` tests report that no exception was
 thrown. The existing tests pass.
 
-- [ ] **Step 4: Change the builder**
+- [x] **Step 4: Change the builder**
 
 In `NetworkSceneBuilder.cs`:
 
@@ -1031,7 +1031,7 @@ Replace `BuildLines` with:
 `geoPointsByShapeId` is still built and still feeds the "no rail shapes" check and the
 projection. The `latitudes` list and the old `bounds` variable are gone.
 
-- [ ] **Step 5: Run the builder tests**
+- [x] **Step 5: Run the builder tests**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests
@@ -1040,7 +1040,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests
 Expected: 42 passed. The tests that predate this task pass unchanged: their fixture sits
 inside the 22 km square, so nothing is cut and the frame is the rail's own bounds.
 
-- [ ] **Step 6: Write the failing Server test**
+- [x] **Step 6: Write the failing Server test**
 
 Add to `NetworkEndpointTests`:
 
@@ -1061,7 +1061,7 @@ Add to `NetworkEndpointTests`:
     }
 ```
 
-- [ ] **Step 7: Run it**
+- [x] **Step 7: Run it**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~NamesTheCoreWhenNoRailIsInsideTheSquare"
@@ -1071,7 +1071,7 @@ Expected: PASS. `Program.cs` needs no change, because its `catch` is for
 `InvalidDataException` only. The test is the guard on that: change the builder's exception to
 `InvalidDataException` for a moment and watch the second assertion fail, then change it back.
 
-- [ ] **Step 8: Run everything**
+- [x] **Step 8: Run everything**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -1079,7 +1079,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: 146 passed (Spatial 43, Gtfs.Static 42, Osm 40, Server 21), 0 warnings.
 
-- [ ] **Step 9: Hand off**
+- [x] **Step 9: Hand off**
 
 ```
 feat: frame the rail on its extent and clip to it
@@ -1101,7 +1101,7 @@ its square stops startup and names the core point.
 No code changes here. Tests are blind to the two things this task looks at: that Boston as
 configured is untouched, and that a network larger than its square is cut where it should be.
 
-- [ ] **Step 1: Boston as configured comes out the same**
+- [x] **Step 1: Boston as configured comes out the same**
 
 ```bash
 dotnet run --project src/MetroDisplay.Server
@@ -1119,7 +1119,7 @@ Expected: `identical`. Boston's subway and light rail lie inside the 22 km squar
 extent is the rail's own bounds as before, and water is normalized in the same frame.
 If the files differ, stop: find the first difference before going on. Stop the Server.
 
-- [ ] **Step 2: Switch commuter rail on, locally**
+- [x] **Step 2: Switch commuter rail on, locally**
 
 In `cities/mbta.json` change `"routeTypes": [0, 1]` to `"routeTypes": [0, 1, 2]`. Start the
 Server and `npm run dev` in `web/`, then open `http://localhost:5173`.
@@ -1140,7 +1140,7 @@ Expected: `"extent":{"aspect":1,"coreRadiusKm":22,"spanKm":44.05}`. The span rea
 and not 44 because the square is sized with the mean Earth radius and projected with the
 equatorial one, 0.11% larger.
 
-- [ ] **Step 3: Switch it back**
+- [x] **Step 3: Switch it back**
 
 Restore `"routeTypes": [0, 1]` in `cities/mbta.json`, stop the Server, then:
 
@@ -1150,7 +1150,7 @@ git status --short cities/
 
 Expected: no output. Commuter rail stays out of the committed config.
 
-- [ ] **Step 4: Tick the plan and hand off**
+- [x] **Step 4: Tick the plan and hand off**
 
 Tick every box in this plan. The commit carries the plan only:
 
