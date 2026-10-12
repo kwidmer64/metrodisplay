@@ -1,6 +1,9 @@
 using System.Net;
 using System.Text.Json;
 using MetroDisplay.Gtfs.Static.Tests;
+using MetroDisplay.Osm;
+using MetroDisplay.Server.Feeds;
+using MetroDisplay.Spatial;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -57,7 +60,7 @@ public sealed class NetworkEndpointTests : IDisposable
         // A cached layer keeps startup off the network. Null leaves the cache empty.
         if (waterLayerJson is not null)
         {
-            File.WriteAllText(Path.Combine(osmDirectory, "test-water.json"), waterLayerJson);
+            File.WriteAllText(WaterLayerPath(osmDirectory), waterLayerJson);
         }
 
         return new WebApplicationFactory<Program>().WithWebHostBuilder(host => host
@@ -67,6 +70,17 @@ public sealed class NetworkEndpointTests : IDisposable
             .UseSetting("MetroDisplay:OsmCacheDirectory", osmDirectory)
             // Nothing listens here, so a fetch fails at once instead of reaching the internet.
             .UseSetting("MetroDisplay:OverpassUrl", "http://127.0.0.1:9/api/interpreter"));
+    }
+
+    /// <summary>
+    /// Where the Server keeps the fixture city's water. The name carries a hash of the query,
+    /// so it is worked out from the same core point and radius as <see cref="TestCityJson"/>.
+    /// </summary>
+    private static string WaterLayerPath(string osmDirectory)
+    {
+        using var unusedClient = new HttpClient();
+        string query = OverpassQuery.Water(GeoBox.Around(new GeoPoint(42.34, -71.08), radiusKm: 22));
+        return new OsmLayerCache(unusedClient, osmDirectory, "http://unused.test/").CachePathFor("test", "water", query);
     }
 
     private static async Task<JsonElement> GetNetworkAsync(WebApplicationFactory<Program> factory)
@@ -177,7 +191,7 @@ public sealed class NetworkEndpointTests : IDisposable
         string query = System.Web.HttpUtility.ParseQueryString(sentBody!)["data"]!;
         Assert.Contains("way[\"natural\"=\"coastline\"](42.14215,", query);
         Assert.Contains(",42.53785,", query);
-        Assert.True(File.Exists(Path.Combine(workspace.FullPath, "osm", "test-water.json")));
+        Assert.True(File.Exists(WaterLayerPath(Path.Combine(workspace.FullPath, "osm"))));
     }
 
     [Fact]

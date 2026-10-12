@@ -25,9 +25,9 @@ public readonly record struct GeoBox(double South, double West, double North, do
     /// </summary>
     public static GeoBox Around(GeoPoint centre, double radiusKm)
     {
-        double latitudeSpan = radiusKm * 1000.0 / MetresPerDegree;
-        double longitudeSpan = latitudeSpan / Math.Cos(centre.Latitude * Math.PI / 180.0);
-        return new GeoBox(centre.Latitude - latitudeSpan, centre.Longitude - longitudeSpan, centre.Latitude + latitudeSpan, centre.Longitude + longitudeSpan);
+        double latitudeSpanDegrees = radiusKm * 1000.0 / MetresPerDegree;
+        double longitudeSpanDegrees = latitudeSpanDegrees / Math.Cos(centre.Latitude * Math.PI / 180.0);
+        return new GeoBox(centre.Latitude - latitudeSpanDegrees, centre.Longitude - longitudeSpanDegrees, centre.Latitude + latitudeSpanDegrees, centre.Longitude + longitudeSpanDegrees);
     }
 
     /// <summary>

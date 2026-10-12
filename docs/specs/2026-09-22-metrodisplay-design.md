@@ -566,6 +566,7 @@ expansion cheap later.
 | Zero vehicles for a whole dwell | Count is 0 | Still draw the map; `stale` distinguishes a dead feed from 3 a.m. |
 | Water fetch fails on first start | HTTP error, timeout, or an Overpass `remark` | Start without water; cache nothing, so the next start retries |
 | Cached water unreadable | Parse throws | Start without water; the warning names the file to delete |
+| Coastline does not close | A gap in OSM's coastline, or data that stops short of the map edge | Start without water; never a flooded map |
 
 Three of these carry design weight:
 
@@ -678,14 +679,19 @@ refinement of the geometry exists.
 Moved ahead of the generated types and the extent on 2026-09-28. Its design settled:
 
 - **Source.** OpenStreetMap through the Overpass API, queried for the square of core ±
-  `coreRadiusKm`. The raw response is cached per city and layer
-  (`.cache/osm/<cityId>-water.json`) on the first start and kept for good: coastlines change
-  on a scale of years, so unlike the GTFS feed it is never refreshed. Delete the file to
-  fetch again. Adding a city stays a config file.
+  `coreRadiusKm`. The raw response is cached per city, layer and query
+  (`.cache/osm/<cityId>-water-<queryHash>.json`) on the first start and kept for good:
+  coastlines change on a scale of years, so unlike the GTFS feed it is never refreshed. Delete
+  the file to fetch again. The query is part of the name because a changed core or radius asks
+  for a different square, and the answer for the old square would leave the coastline short of
+  the new map's edge; such a change fetches once more and leaves the old file behind. Adding a
+  city stays a config file.
 - **Fill.** Water is filled. Coastline ways are overlaid on the map edge and closed along it
   into sea polygons (OSM keeps land on the left). Lakes and rivers come from
   `natural=water` and `waterway=riverbank` ways and multipolygon relations, with islands as
-  holes. Geometry uses NetTopologySuite; the coastline closing is ours.
+  holes. Geometry uses NetTopologySuite; the coastline closing is ours. A coastline that does
+  not close against the map edge cannot be told into sea and land, so it is refused and the
+  map starts without water instead of flooded.
 - **Frame.** Water is clipped to the square of core ± `coreRadiusKm`, the frame slice 4 gives
   the whole map, and normalized with the rail network's bounds so both layers line up. Until
   slice 4 that leaves water coordinates outside `[0, 1]` wherever the square is larger than

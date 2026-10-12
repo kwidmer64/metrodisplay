@@ -114,6 +114,24 @@ public class CoastlineCloserTests
     }
 
     [Fact]
+    public void RefusesACoastThatStopsShortOfTheFrame()
+    {
+        // A coast heading north that ends at y = 60, leaving a 40 unit gap to the frame's edge,
+        // and an island. Nothing divides the frame, so every probe lands in one face; counting
+        // votes there would call the whole map sea.
+        var brokenCoast = new List<(double X, double Y)>();
+        for (int step = 0; step <= 14; step++)
+        {
+            brokenCoast.Add((50, -10 + step * 5));
+        }
+
+        var exception = Assert.Throws<InvalidDataException>(() => CoastlineCloser.CloseSea(
+            [Way(brokenCoast.ToArray()), Way((70, 20), (80, 20), (80, 30), (70, 30), (70, 20))], Frame));
+
+        Assert.Contains("does not close", exception.Message);
+    }
+
+    [Fact]
     public void FindsNoSeaWithoutACoastline()
     {
         Assert.Empty(CoastlineCloser.CloseSea([], Frame));

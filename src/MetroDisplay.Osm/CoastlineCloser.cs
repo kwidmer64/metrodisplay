@@ -15,7 +15,19 @@ public static class CoastlineCloser
     /// How far either side of a coastline segment the sea and land probes sit, in plane units.
     /// Small enough to stay inside the face the segment borders.
     /// </summary>
-    private const double SideProbeOffset = 0.5;
+    private const double SideProbeOffsetM = 0.5;
+
+    /// <summary>
+    /// A face with fewer probes than this is too small to judge and is left to the vote.
+    /// </summary>
+    private const int MinimumVotesToJudge = 10;
+
+    /// <summary>
+    /// The share of a face's probes that may disagree with the rest before the coastline is
+    /// taken to be broken. A closed coast gives faces that are all sea or all land; a few stray
+    /// probes come from features narrower than the probe offset.
+    /// </summary>
+    private const double MixedShoreShare = 0.05;
 
     private static readonly GeometryFactory Factory = new();
 
@@ -25,6 +37,7 @@ public static class CoastlineCloser
     /// <param name="coastlineWays">Coastline ways in OSM's direction: land on the left, sea on the right.</param>
     /// <param name="frame">The rectangle to close the coastline against.</param>
     /// <returns>Sea polygons inside the frame, with islands as holes. Empty when no coastline crosses the frame.</returns>
+    /// <exception cref="InvalidDataException">The coastline does not close against the frame, so sea and land cannot be told apart.</exception>
     public static IReadOnlyList<Polygon> CloseSea(IReadOnlyList<IReadOnlyList<PlanePoint>> coastlineWays, ExtentRectangle frame)
     {
         // Generate the Envelope for the viewport, then convert to geometry
@@ -74,6 +87,20 @@ public static class CoastlineCloser
         int[] seaVotes = CountProbesPerFace(faces, seaProbes);
         int[] landVotes = CountProbesPerFace(faces, landProbes);
 
+        // A coast that stops short of the frame's edge divides nothing: sea and land probes then
+        // share one face, and the vote would call the whole map sea or the whole map land.
+        for (int faceNumber = 0; faceNumber < faces.Count; faceNumber++)
+        {
+            int totalVotes = seaVotes[faceNumber] + landVotes[faceNumber];
+            int minorityVotes = Math.Min(seaVotes[faceNumber], landVotes[faceNumber]);
+            if (totalVotes >= MinimumVotesToJudge && minorityVotes > totalVotes * MixedShoreShare)
+            {
+                throw new InvalidDataException(
+                    $"The coastline does not close against the map's edge: one area has {seaVotes[faceNumber]} stretches of shore facing the sea and {landVotes[faceNumber]} facing land. " +
+                    "The data may not cover the whole map, or the coastline has a gap.");
+            }
+        }
+
         // If a face contains more sea probes than land probes, classify as water, return as list of sea faces
         return faces.Where((_, faceNumber) => seaVotes[faceNumber] > landVotes[faceNumber]).ToList();
     }
@@ -97,8 +124,8 @@ public static class CoastlineCloser
             // The unit vector pointing right of the direction of travel.
             double rightX = (end.Y - start.Y) / length;
             double rightY = -(end.X - start.X) / length;
-            seaProbes.Add(new Coordinate(middle.X + rightX * SideProbeOffset, middle.Y + rightY * SideProbeOffset));
-            landProbes.Add(new Coordinate(middle.X - rightX * SideProbeOffset, middle.Y - rightY * SideProbeOffset));
+            seaProbes.Add(new Coordinate(middle.X + rightX * SideProbeOffsetM, middle.Y + rightY * SideProbeOffsetM));
+            landProbes.Add(new Coordinate(middle.X - rightX * SideProbeOffsetM, middle.Y - rightY * SideProbeOffsetM));
         }
     }
 

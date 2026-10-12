@@ -23,9 +23,10 @@ public class OsmLayerCacheTests
         string result = await cache.GetAsync("test", "water", Query);
 
         Assert.Equal(LayerJson, result);
-        Assert.Equal(LayerJson, await File.ReadAllTextAsync(cache.CachePathFor("test", "water")));
+        Assert.Equal(LayerJson, await File.ReadAllTextAsync(cache.CachePathFor("test", "water", Query)));
         // Nothing but the finished file: no partial download left behind.
-        Assert.Equal(new[] { "test-water.json" }, Directory.EnumerateFiles(cacheDirectory).Select(Path.GetFileName));
+        string fileName = Assert.Single(Directory.EnumerateFiles(cacheDirectory).Select(Path.GetFileName))!;
+        Assert.Matches(@"^test-water-[0-9a-f]{8}\.json$", fileName);
     }
 
     [Fact]
@@ -34,12 +35,30 @@ public class OsmLayerCacheTests
         using var workspace = new TemporaryDirectory();
         StubHttpHandler handler = Answering(HttpStatusCode.OK, "{}");
         var cache = new OsmLayerCache(new HttpClient(handler), workspace.FullPath, OverpassUrl);
-        await File.WriteAllTextAsync(cache.CachePathFor("test", "water"), LayerJson);
+        await File.WriteAllTextAsync(cache.CachePathFor("test", "water", Query), LayerJson);
 
         string result = await cache.GetAsync("test", "water", Query);
 
         Assert.Equal(LayerJson, result);
         Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task FetchesAgainWhenTheQueryChanges()
+    {
+        // A city whose core or radius changes asks for a different box. The layer kept for the
+        // old box does not cover the new one, so it must not answer for it.
+        using var workspace = new TemporaryDirectory();
+        StubHttpHandler handler = Answering(HttpStatusCode.OK, LayerJson);
+        var cache = new OsmLayerCache(new HttpClient(handler), workspace.FullPath, OverpassUrl);
+        const string widerQuery = "[out:json];way[\"natural\"=\"water\"](0,1,4,5);out geom;";
+
+        await cache.GetAsync("test", "water", Query);
+        await cache.GetAsync("test", "water", widerQuery);
+        await cache.GetAsync("test", "water", Query);
+
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Equal(2, Directory.EnumerateFiles(workspace.FullPath).Count());
     }
 
     [Fact]

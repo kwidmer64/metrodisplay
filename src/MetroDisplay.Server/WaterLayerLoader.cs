@@ -20,10 +20,14 @@ public static class WaterLayerLoader
     /// <returns>The water areas, or an empty list when the layer could not be fetched or read.</returns>
     public static async Task<IReadOnlyList<WaterArea>> LoadAsync(OsmLayerCache cache, CityConfig config, ExtentRectangle railBounds, ILogger logger, CancellationToken cancellationToken = default)
     {
+        // Set once the query is known, so the warning can name the file it would be kept in.
+        string? cachePath = null;
         try
         {
             GeoBox box = GeoBox.Around(new GeoPoint(config.Extent.Core[0], config.Extent.Core[1]), config.Extent.CoreRadiusKm);
-            string json = await cache.GetAsync(config.Id, LayerName, OverpassQuery.Water(box), cancellationToken);
+            string query = OverpassQuery.Water(box);
+            cachePath = cache.CachePathFor(config.Id, LayerName, query);
+            string json = await cache.GetAsync(config.Id, LayerName, query, cancellationToken);
             return WaterLayerBuilder.Build(OverpassReader.Read(json), box.ToPlane(), railBounds, box.CentreLatitude);
         }
         catch (Exception exception)
@@ -33,7 +37,7 @@ public static class WaterLayerLoader
                 exception,
                 "Starting without water: {Reason} If {CachePath} exists, delete it to fetch the layer again.",
                 exception.Message,
-                cache.CachePathFor(config.Id, LayerName));
+                cachePath ?? "the cached layer");
             return [];
         }
     }

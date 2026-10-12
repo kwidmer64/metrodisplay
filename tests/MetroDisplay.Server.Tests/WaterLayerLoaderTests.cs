@@ -1,4 +1,5 @@
 using MetroDisplay.Contracts;
+using MetroDisplay.Osm;
 using MetroDisplay.Server.Feeds;
 using MetroDisplay.Spatial;
 using Microsoft.Extensions.Logging;
@@ -40,7 +41,9 @@ public class WaterLayerLoaderTests
     {
         using var workspace = new TemporaryDirectory();
         var cache = new OsmLayerCache(new HttpClient(new StubHttpHandler(_ => throw new InvalidOperationException("The cache should have answered."))), workspace.FullPath, "https://overpass.example.test/api/interpreter");
-        string cachedLayer = cache.CachePathFor("test", "water");
+        // The file is named for the query, so it has to be the one this city's core square makes.
+        string query = OverpassQuery.Water(GeoBox.Around(new GeoPoint(42.34, -71.08), radiusKm: 22));
+        string cachedLayer = cache.CachePathFor("test", "water", query);
         await File.WriteAllTextAsync(cachedLayer, "<html>Sign in to continue</html>");
         var logger = new RecordingLogger();
 

@@ -2013,7 +2013,7 @@ names the file to delete.
 - Produces: `drawWater(context, scene, fit)` in `web/src/draw.ts`; `WaterArea` and
   `NetworkScene.water` in `web/src/contract.ts`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `web/src/draw.test.ts`:
 
@@ -2069,18 +2069,26 @@ describe('drawWater', () => {
       'fill evenodd',
     ]);
   });
+
+  it('skips a ring with too few points to enclose anything', () => {
+    const { context, calls } = recordingContext();
+
+    drawWater(context, sceneWith([{ rings: [[0.1, 0.1, 0.2, 0.2]] }]), fit);
+
+    expect(calls).toEqual(['beginPath', 'fill evenodd']);
+  });
 });
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 ```bash
 cd web && npm test
 ```
 
-Expected: FAIL. `draw.test.ts` cannot run: `drawWater` is not exported from `./draw`.
+Expected: FAIL, `TypeError: drawWater is not a function` in each draw test.
 
-- [ ] **Step 3: Extend the contract types**
+- [x] **Step 3: Extend the contract types**
 
 In `web/src/contract.ts`, add `water` to `NetworkScene` and a new interface:
 
@@ -2100,7 +2108,7 @@ export interface WaterArea {
 }
 ```
 
-- [ ] **Step 4: Draw the water**
+- [x] **Step 4: Draw the water**
 
 In `web/src/draw.ts`, add below `LINE_WIDTH_PX`:
 
@@ -2134,15 +2142,15 @@ export function drawWater(context: CanvasRenderingContext2D, scene: NetworkScene
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 ```bash
 cd web && npm test
 ```
 
-Expected: PASS, 7 tests (5 fit, 2 draw).
+Expected: PASS, 8 tests (5 fit, 3 draw).
 
-- [ ] **Step 6: Draw water under the lines, and credit OpenStreetMap**
+- [x] **Step 6: Draw water under the lines, and credit OpenStreetMap**
 
 In `web/src/main.ts`:
 
@@ -2165,7 +2173,7 @@ Change the status line so the attribution shows whenever water is drawn, as ODbL
     statusLine.textContent = `${scene.lines.length} lines · ${scene.artifactVersion}${attribution}`;
 ```
 
-- [ ] **Step 7: Type-check and build**
+- [x] **Step 7: Type-check and build**
 
 ```bash
 cd web && npm run build
@@ -2173,7 +2181,7 @@ cd web && npm run build
 
 Expected: `tsc` reports nothing, and Vite writes `web/dist/`.
 
-- [ ] **Step 8: Look at it**
+- [x] **Step 8: Look at it**
 
 Run the Server and `npm run dev` (two terminals, as in slice 1) and open
 `http://localhost:5173`. Expected:
@@ -2188,7 +2196,7 @@ Run the Server and `npm run dev` (two terminals, as in slice 1) and open
   `appsettings.Development.json`, and restart: the rail draws alone and the attribution is
   gone. Undo both afterwards.
 
-- [ ] **Step 9: Hand off for commit**
+- [x] **Step 9: Hand off for commit**
 
 ```
 feat: fill water behind the rail lines
@@ -2202,17 +2210,50 @@ other. OpenStreetMap is credited whenever water is drawn.
 
 ## Done when
 
-- `dotnet test MetroDisplay.slnx` passes with 117 tests.
-- `npm test` in `web/` passes with 7 tests, and `npm run build` succeeds.
+- `dotnet test MetroDisplay.slnx` passes with 119 tests.
+- `npm test` in `web/` passes with 8 tests, and `npm run build` succeeds.
 - With the Server and `npm run dev` running, `http://localhost:5173` shows Boston's rail over
   its filled harbour, rivers and lakes, with the OpenStreetMap credit.
-- A second Server start reuses `.cache/osm/mbta-water.json` and makes no request to Overpass.
+- A second Server start reuses `.cache/osm/mbta-water-<queryHash>.json` and makes no request to Overpass.
+
+## Changes after the whole-slice review
+
+A review of the finished slice found two faults worth fixing before moving on. Each was fixed
+test-first; the task text above shows the code as first written.
+
+- **The cache answered for the wrong square.** A layer was kept per city and layer only, so
+  after a change to `coreRadiusKm` the old response was reused. Its coastline stopped short of
+  the larger map's edge, nothing divided the frame, and the vote called the whole map sea:
+  measured on the Boston cache, 22.7% sea at 22 km became 99.8% at 26 km.
+  `OsmLayerCache.CachePathFor` now takes the query and puts eight hex digits of its hash in the
+  file name (`<cityId>-<layer>-<queryHash>.json`).
+  Test: `OsmLayerCacheTests.FetchesAgainWhenTheQueryChanges`.
+- **A coastline with a gap gave all sea or no sea, silently.** `CoastlineCloser.CloseSea` now
+  throws `InvalidDataException` when a face of ten or more probes has over 5% of them
+  disagreeing, which is the mark of a coast that divides nothing. The loader then starts
+  without water and logs why.
+  Test: `CoastlineCloserTests.RefusesACoastThatStopsShortOfTheFrame`.
+- **Unit suffixes.** `latitudeSpan` and `longitudeSpan` in `GeoBox` became
+  `latitudeSpanDegrees` and `longitudeSpanDegrees`; `SideProbeOffset` became `SideProbeOffsetM`.
+
+Left for later, by choice:
+
+- A self-crossing outline is repaired with `Buffer(0)`, which keeps one lobe of a bow tie and
+  drops the other. `GeometryFixer.Fix` keeps both.
+- An empty but well-formed Overpass answer (`{"elements":[]}`) is cached like any other.
+- One geometry NetTopologySuite cannot process would drop the whole layer, and the warning's
+  advice to delete the cache would not help. No such element is in the Boston data.
+- A corner face bordered only by segments whose midpoints lie outside the frame gets no votes
+  and is taken as land.
+- Two Servers starting at once share one `.download` path.
+- `OsmCacheDirectory` and `OverpassUrl` have no defaults, so a config without them stops startup.
+- Draw order, water before lines, lives in `main.ts` and has no test.
 
 ## Carried into later slices
 
 - **Water colour** is one constant in `draw.ts`. Tune it by eye; a per-city palette is spec §8's
   seam if it ever needs to vary.
-- **Payload** is about 179 KB of water beside 246 KB of rail. If it matters, raise the 2 ha
+- **Payload** is about 438 KB for rail and water together, water being roughly 179 KB of it. If it matters, raise the 2 ha
   floor or the 15 m tolerance: both are single constants, measured against the real feed.
 - **Slice 3, generated types,** replaces the hand-written `contract.ts`, which this slice
   extended once more.

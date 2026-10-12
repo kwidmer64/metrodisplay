@@ -5,6 +5,7 @@ export interface NetworkScene {
   artifactVersion: string;
   extent: ExtentInfo;
   lines: LineScene[];
+  water: WaterArea[];
 }
 
 export interface ExtentInfo {
@@ -24,4 +25,9 @@ export interface ShapeGeometry {
   id: string;
   points: number[];
   lengthM: number;
+}
+
+/** One body of water: its outline first, then one ring per island. Rings are implicitly closed. */
+export interface WaterArea {
+  rings: number[][];
 }

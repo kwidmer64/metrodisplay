@@ -1,5 +1,5 @@
 import type { NetworkScene } from './contract';
-import { drawNetwork } from './draw';
+import { drawNetwork, drawWater } from './draw';
 import { containFit } from './fit';
 
 const MARGIN_PX = 32;
@@ -35,7 +35,9 @@ function render(scene: NetworkScene, widthPx: number, heightPx: number): void {
   if (widthPx === 0 || heightPx === 0) {
     return;
   }
-  drawNetwork(drawing, scene, containFit(widthPx, heightPx, scene.extent.aspect, MARGIN_PX));
+  const fit = containFit(widthPx, heightPx, scene.extent.aspect, MARGIN_PX);
+  drawWater(drawing, scene, fit);
+  drawNetwork(drawing, scene, fit);
 }
 
 async function loadScene(): Promise<NetworkScene> {
@@ -48,7 +50,9 @@ async function loadScene(): Promise<NetworkScene> {
 
 loadScene()
   .then((scene) => {
-    statusLine.textContent = `${scene.lines.length} lines · ${scene.artifactVersion}`;
+    // OpenStreetMap's licence asks for this credit wherever its data is shown.
+    const attribution = scene.water.length > 0 ? ' · © OpenStreetMap contributors' : '';
+    statusLine.textContent = `${scene.lines.length} lines · ${scene.artifactVersion}${attribution}`;
     new ResizeObserver((entries) => {
       const size = entries[0].contentRect;
       render(scene, size.width, size.height);
