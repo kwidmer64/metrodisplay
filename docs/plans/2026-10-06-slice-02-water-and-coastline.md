@@ -2257,10 +2257,11 @@ Left for later, by choice:
   floor or the 15 m tolerance: both are single constants, measured against the real feed.
 - **Slice 3, generated types,** replaces the hand-written `contract.ts`, which this slice
   extended once more.
-- **Slice 4, the extent,** frames the rail on the same core square, after which water
-  coordinates return to `[0, 1]`.
+- **The extent slice** (slice 4 when this was written, slice 3 since 2026-10-11) frames the
+  rail on its own bounds cut to the core square. Water keeps the core square, so its
+  coordinates still run outside `[0, 1]`; spec §14 records why.
 - **Slice 7, place names,** adds a second layer through `OsmLayerCache` (`<cityId>-places.json`)
   and a second query in `OverpassQuery`; the reader and box are reused as they are.
 - **Rivers drawn as lines.** OSM maps narrow streams as `waterway=river` lines with no area.
   They are not fetched. Wide rivers (the Charles, the Mystic) are areas and are.
-- **Slice 1's deferred minors** are still open and untouched by this plan.
+- **Deferred minors,** this slice's above and slice 1's, are scheduled as slice 16 in spec §14.

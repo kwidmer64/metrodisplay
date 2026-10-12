@@ -146,7 +146,7 @@ docs/design/mockups/        Design mockups from the brainstorming session.
 The Server exists from slice 1 (§14): it builds the scene at startup and serves it to the
 renderer, so the final topology is in place before any feature needs it. A standalone
 artifact-building CLI is optional. It only earns a place if the in-process build ever
-needs to run as a scheduled job (slice 15).
+needs to run as a scheduled job (slice 14).
 
 ### Boundaries
 
@@ -640,38 +640,39 @@ refinement of the geometry exists.
 | — | Scaffold, contracts, city config | Done. `NetworkScene` wire shape pinned by a test; strict `CityConfigLoader` |
 | 1 | Lines on screen | Boston's rail lines in route colours, fit to the window. The Server builds the scene at startup and serves `GET /api/network`; the renderer draws polylines |
 | 2 | Water and coastline | Boston's harbour, rivers and lakes filled behind the lines; OSM attribution shown |
-| 3 | Generated contract types | TypeScript types generated from `Contracts`; renaming a C# field fails `tsc` |
-| 4 | True-scale extent and clip | Map framed on core ± `coreRadiusKm`; with commuter rail enabled, lines are visibly clipped |
-| 5 | Edge labels | `TO <TERMINUS>` where each clipped line leaves the map |
-| 6 | Stations | Station markers; the `rank` prominence rule settled by eye |
-| 7 | Place names | Notable cities and towns labelled from OSM `place` nodes, ranked by type and population, clear of the lines |
-| 8 | Lean geometry | Shape dedupe and Douglas–Peucker for rail. The map looks the same; the payload shrinks |
-| 9 | Vehicle positions | `Realtime` decodes VehiclePositions and joins them to shapes; `shapeFraction`s checkable at `GET /api/frame` |
-| 10 | Live dots over SSE | `/stream` delivers `hello`, `network`, `frame`; dots drawn, snapping each poll |
-| 11 | Tweening | Dots glide along the track between polls |
-| 12 | Bottom rail | City name, clock, per-line counts |
-| 13 | Alerts ticker | ServiceAlerts polled; ticker in the rail |
-| 14 | Second city and rotation | BART added; dwell, progress, crossfade, prefetch |
-| 15 | Unattended hardening | Conditional-GET daily refresh, artifact store and versioning, backoff, `stale`, `/healthz`, the §12 failure table |
+| 3 | True-scale extent and clip | Map framed on core ± `coreRadiusKm`; with commuter rail enabled, lines are visibly clipped |
+| 4 | Stations | Station markers; the `rank` prominence rule settled by eye |
+| 5 | Vehicle positions | `Realtime` decodes VehiclePositions and joins them to shapes; `shapeFraction`s checkable at `GET /api/frame` |
+| 6 | Live dots over SSE | `/stream` delivers `hello`, `network`, `frame`; dots drawn, snapping each poll |
+| 7 | Edge labels | `TO <TERMINUS>` where each clipped line leaves the map |
+| 8 | Place names | Notable cities and towns labelled from OSM `place` nodes, ranked by type and population, clear of the lines |
+| 9 | Lean geometry | Shape dedupe and Douglas–Peucker for rail. The map looks the same; the payload shrinks |
+| 10 | Tweening | Dots glide along the track between polls |
+| 11 | Bottom rail | City name, clock, per-line counts |
+| 12 | Alerts ticker | ServiceAlerts polled; ticker in the rail |
+| 13 | Second city and rotation | BART added; dwell, progress, crossfade, prefetch |
+| 14 | Unattended hardening | Conditional-GET daily refresh, artifact store and versioning, backoff, `stale`, `/healthz`, the §12 failure table |
+| 15 | Generated contract types | TypeScript types generated from `Contracts`; renaming a C# field fails `tsc` |
+| 16 | Minor clean-up | The small findings set aside by each slice's review, listed below, fixed or struck off |
 
 ### What slice 1 leaves out, and why
 
 - **Extent, clipping, edge labels, stations.** Each gets its own slice, so its effect is
   visible in isolation. Slice 1 normalizes against the network's own bounding box. §4's
-  transform is unchanged; its extent step simply arrives in slice 4.
+  transform is unchanged; its extent step simply arrives in slice 3.
 - **Dedupe and simplification.** On 2026-09-24, MBTA subway and light rail measured 65
   shapes, 17,579 points, about 250 KB of JSON. Raw geometry is fine at that size. A large
-  system such as New York or London could be 10–50× that, so slice 8 lands before any
+  system such as New York or London could be 10–50× that, so slice 9 lands before any
   large city does.
 - **Artifact store, manifest, conditional GET.** Versioning matters only once a network is
   replaced while running (§8's ordering interlock). A scene built once at startup is never
-  replaced. Until slice 15, `artifactVersion` is `<cityId>@` plus the first 8 hex digits of
+  replaced. Until slice 14, `artifactVersion` is `<cityId>@` plus the first 8 hex digits of
   the zip's SHA-256. It derives from content, so the same zip always yields the same version.
-- **Failure handling.** Slices 1–14 fail fast at startup with a message naming the cause.
+- **Failure handling.** Slices 1–13 fail fast at startup with a message naming the cause.
   §12's degrade-and-keep-serving behaviour protects an unattended display and arrives with
-  slice 15. Water is the one exception from slice 2 on: it is decoration from a volunteer-run
+  slice 14. Water is the one exception from slice 2 on: it is decoration from a volunteer-run
   API, so its failures degrade to a map without water instead of stopping startup.
-- **Trip index.** It arrives with its only consumer, slice 9, built in memory alongside the
+- **Trip index.** It arrives with its only consumer, slice 5, built in memory alongside the
   scene.
 
 ### Water and coastline (slice 2)
@@ -692,26 +693,104 @@ Moved ahead of the generated types and the extent on 2026-09-28. Its design sett
   holes. Geometry uses NetTopologySuite; the coastline closing is ours. A coastline that does
   not close against the map edge cannot be told into sea and land, so it is refused and the
   map starts without water instead of flooded.
-- **Frame.** Water is clipped to the square of core ± `coreRadiusKm`, the frame slice 4 gives
-  the whole map, and normalized with the rail network's bounds so both layers line up. Until
-  slice 4 that leaves water coordinates outside `[0, 1]` wherever the square is larger than
-  the network; the screen edge does the cutting. Clipping to the network's own bounds was
-  tried first and ended the harbour in a hard edge at the easternmost station.
+- **Frame.** Water is clipped to the square of core ± `coreRadiusKm` and normalized with the
+  rail's extent so both layers line up. Water coordinates therefore fall outside `[0, 1]`
+  wherever the square is larger than the extent. That is intended: water is a backdrop that
+  runs on past the rail's frame, and the screen edge does the cutting. Clipping water to the
+  rail's own frame was tried first and ended the harbour in a hard edge at the easternmost
+  station.
 - **Noise and size.** Areas under 2 ha of ground are dropped, and outlines are simplified with
   a topology-preserving simplifier at 15 m of ground distance, converted to plane units.
 - **Licence.** ODbL: `© OpenStreetMap contributors` is shown whenever water is drawn.
-- **Place names (slice 7)** reuse the same cache and reader with a second layer file, so
+- **Place names (slice 8)** reuse the same cache and reader with a second layer file, so
   adding them never refetches water.
+
+### True-scale extent and clip (slice 3)
+
+Implements §4's extent step and §5's clipping. Its design settled on 2026-10-11:
+
+- **Extent.** The rail's bounding box intersected with the core square, exactly as §5 says.
+  The core square is the same box water is fetched and clipped for, built by the same code, so
+  the two layers cannot disagree about it. A system smaller than its square, such as Boston's
+  subway, is framed on its own bounds and is not padded out.
+- **The rail fills the frame; water does not stop at it.** Framing everything on the whole core
+  square was considered. It would state one scale for every city, but a small system would sit
+  small in the middle of the screen. Cutting water to the rail's frame was already rejected in
+  slice 2. So the extent frames the rail, and water keeps the core square.
+- **Clip.** Each shape is cut at the extent's edges, mid-segment. A shape that leaves and
+  returns becomes several runs; runs after the first carry `#1`, `#2` on the shape id. A shape
+  wholly outside is dropped, and a route left with nothing is left off the map. `lengthM` is
+  the ground length of the run that is drawn.
+- **No rail in the square** stops startup with a message naming the core point and radius. It
+  means the config points at the wrong place.
+- **Where it lives.** `GeoBox` moves from `Osm` to `Spatial`, since `Gtfs.Static` needs the core
+  square and must not depend on `Osm`. The rectangle intersection and the polyline clipper are
+  pure geometry in `Spatial`. `Gtfs.Static` computes the extent, clips, then normalizes. `Osm`,
+  the Server, the renderer and the wire contract do not change.
+- **Known limit.** When a network fills its whole square, as Boston's does with commuter rail,
+  the extent and the water box coincide. Water then has nothing to run on into, and a screen
+  wider than the map shows empty bands beside it. Fetching water for a wider box is a separate
+  decision, taken once that case is on screen.
+- **Left for later.** Edge labels at the cut points are slice 7. Where each run starts along
+  its original shape, which vehicle positions need, is added in slice 5 with its consumer.
+
+Commuter rail stays out of `cities/mbta.json`. It is switched on by hand to see the clip.
+
+### Minor clean-up (slice 16)
+
+Each slice's review sets aside findings too small to hold the slice back. They are collected
+here so they are fixed in one pass once the display works end to end, instead of being
+forgotten. A later slice that touches the same code may fix one on the way; strike it off
+here when that happens.
+
+From slice 1:
+
+- `fit.test.ts` never observes the margin when height is the constraint. A case such as
+  `containFit(1000, 600, 0.5, 50)`, giving scale 500 and `originY` 50, covers it.
+- `StaticFeedCache.cs` has an unused `using CsvHelper.Configuration;`.
+- `MercatorProjector.Project` carries empty `<param>` and `<returns>` tags.
+- Comment typos: `NetworkSceneBuilder` ("latittude", "extend window", "alphbetically",
+  "caulculate", and route written where shape is meant), `ExtentRectangle` ("enumurate" and a
+  sentence cut off), `StaticFeedCache` ("doesnt").
+- `StaticFeedCache`'s download error prints the feed's full URL. A key carried in the query
+  string would reach the log. Strip the query before printing. This one cannot wait for
+  slice 16 if a city with a key in its URL is added sooner.
+- `GtfsArchiveReader` lets a CsvHelper conversion error escape without naming the file it
+  came from.
+- One directory goes by three names: `gtfsStoreDirectory`, `StaticFeedCache` and
+  `FeedCacheDirectory`. Several lines in `Program.cs` run to about 190 characters.
+
+From slice 2: the list under "Deferred" in
+`docs/plans/2026-10-06-slice-02-water-and-coastline.md`.
 
 ### Superseded plan
 
 `docs/plans/2026-09-22-static-geometry-pipeline.md` built the whole static pipeline before
 drawing anything. Its Tasks 1–2 are complete; Tasks 3–14 are superseded by the slices above
-and remain as reference code for slices 1, 4–6, 8, 9, and 15.
+and remain as reference code for slices 1, 3–5, 7, 9, and 14.
 
 Slices were renumbered on 2026-09-28 when water moved from 6 to 2 and place names were added
 as 7. Plans written before that date use the old numbers: old 2–5 are now 3–6, and old 7–14
 are now 8–15.
+
+Slices were reordered again on 2026-10-11. The extent, stations, vehicle positions and
+live dots now come first, then edge labels and place names, and generated contract types moved
+near the end as an improvement instead of a prerequisite. Plans written between the two dates, the slice 2 plan
+among them, use the numbers of that time:
+
+| Then | Now | Slice |
+|---|---|---|
+| 3 | 15 | Generated contract types |
+| 4 | 3 | True-scale extent and clip |
+| 5 | 7 | Edge labels |
+| 6 | 4 | Stations |
+| 7 | 8 | Place names |
+| 8 | 9 | Lean geometry |
+| 9 | 5 | Vehicle positions |
+| 10 | 6 | Live dots over SSE |
+| 11–15 | 10–14 | Tweening through unattended hardening |
+
+Slices 1, 2 and 16 kept their numbers.
 
 ---
 
@@ -754,7 +833,7 @@ the design; all are lookups.
 
 - Exact .NET approach for GTFS-RT protobuf: compiling the official `gtfs-realtime.proto`
   with `Google.Protobuf` + `Grpc.Tools` is the vendor-neutral baseline. Community binding
-  packages exist and should be evaluated at slice 9.
+  packages exist and should be evaluated at slice 5.
 - Current feed URLs, auth requirements, and published poll cadences for the chosen agencies.
 - Each agency's licence and attribution requirements, and whether attribution must appear
   on screen.
@@ -762,6 +841,6 @@ the design; all are lookups.
   it does not.
 - Whether `vehicle.vehicle.id` is stable between polls per agency; fall back to `trip_id`
   where it is not.
-- Per-city `coreRadiusKm` and `simplify.toleranceM` values, tuned by eye at slices 4 and 8.
+- Per-city `coreRadiusKm` and `simplify.toleranceM` values, tuned by eye at slices 3 and 9.
 - The Overpass usage policy (an identifying `User-Agent`, request limits) and the exact
   attribution wording OSM asks for (slice 2).
