@@ -218,5 +218,20 @@ public sealed class NetworkEndpointTests : IDisposable
         Assert.Equal(2, network.GetProperty("lines").GetArrayLength());
     }
 
+    [Fact]
+    public void NamesTheCoreWhenNoRailIsInsideTheSquare()
+    {
+        // The feed is fine; the config points 130 km away. Advice to delete the cached feed
+        // would send the reader after the wrong file.
+        string misplacedCityJson = TestCityJson.Replace("\"core\": [42.34, -71.08]", "\"core\": [43.5, -71.08]");
+        Assert.Contains("43.5", misplacedCityJson);
+        using WebApplicationFactory<Program> factory = CreateFactory("test", misplacedCityJson);
+
+        Exception exception = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
+
+        Assert.Contains("core point (43.5, -71.08)", exception.ToString());
+        Assert.DoesNotContain("Delete it to download the feed again", exception.ToString());
+    }
+
     public void Dispose() => workspace.Dispose();
 }

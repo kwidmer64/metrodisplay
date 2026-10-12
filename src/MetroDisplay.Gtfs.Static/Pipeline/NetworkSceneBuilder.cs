@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using MetroDisplay.Contracts;
 using MetroDisplay.Spatial;
@@ -9,7 +10,7 @@ namespace MetroDisplay.Gtfs.Static.Pipeline;
 /// The rail scene together with the frame its coordinates are normalized in.
 /// </summary>
 /// <param name="Scene">The scene, with no water yet.</param>
-/// <param name="Bounds">Plane rectangle every normalized coordinate in <paramref name="Scene"/> is relative to. Other layers normalize with it so they line up with the rail.</param>
+/// <param name="Bounds">The extent: the plane rectangle every normalized coordinate in <paramref name="Scene"/> is relative to. Other layers normalize with it so they line up with the rail.</param>
 public sealed record RailLayer(NetworkScene Scene, ExtentRectangle Bounds);
 
 /// <summary>
@@ -17,8 +18,8 @@ public sealed record RailLayer(NetworkScene Scene, ExtentRectangle Bounds);
 /// inputs: the same zip and config always produce the same scene, version included.
 /// </summary>
 /// <remarks>
-/// Lines only, fitted to the network's own bounds. The configured extent, clipping, edge
-/// labels, stations and simplification each arrive in a later slice (spec §14).
+/// Lines only, framed on the extent of spec §5 and cut at its edge. Edge labels, stations and
+/// simplification each arrive in a later slice (spec §14).
 /// </remarks>
 public static class NetworkSceneBuilder
 {
@@ -31,11 +32,13 @@ public static class NetworkSceneBuilder
     /// The rail scene alone, for callers that need no other layer.
     /// </summary>
     /// <exception cref="InvalidDataException">The feed has no rail shapes, or lacks a required file or column.</exception>
+    /// <exception cref="InvalidOperationException">No rail lies inside the city's core square: the config's core point or radius is wrong.</exception>
     public static NetworkScene Build(byte[] zipBytes, CityConfig config) => BuildLayer(zipBytes, config).Scene;
 
     /// <param name="zipBytes">The static GTFS archive.</param>
     /// <param name="config">The city being built.</param>
     /// <exception cref="InvalidDataException">The feed has no rail shapes, or lacks a required file or column.</exception>
+    /// <exception cref="InvalidOperationException">No rail lies inside the city's core square: the config's core point or radius is wrong.</exception>
     public static RailLayer BuildLayer(byte[] zipBytes, CityConfig config)
     {
         // Read the GTFS ZIP file and select the rail routes
@@ -56,30 +59,42 @@ public static class NetworkSceneBuilder
             StringComparer.Ordinal);
 
         // create a bounding box that tightly fits all shapes combined
-        ExtentRectangle bounds = ExtentRectangle.Enclosing(planePointsByShapeId.Values.SelectMany(points => points));
+        ExtentRectangle content = ExtentRectangle.Enclosing(planePointsByShapeId.Values.SelectMany(points => points));
 
+        // The extent is that box cut down to the core square, so the map's scale is set by
+        // real distance from the core and not by how far the rail happens to run.
+        GeoPoint core = new(config.Extent.Core[0], config.Extent.Core[1]);
+        ExtentRectangle coreSquare = GeoBox.Around(core, config.Extent.CoreRadiusKm).ToPlane();
+        ExtentRectangle extent = content.Intersect(coreSquare) ?? throw NoRailInTheCoreSquare(config);
 
-        // selects all the points, gets the latitudes from those points, converts to list
-        // Mercator stretches based on latitude, and using the middle latittude minimizes the error
-        List<double> latitudes = geoPointsByShapeId.Values.SelectMany(points => points).Select(point => point.Latitude).ToList();
-        double centerLatitude = (latitudes.Min() + latitudes.Max()) / 2.0;
+        // The box can overlap the square without any rail running through the overlap.
+        List<LineScene> lines = BuildLines(selection, planePointsByShapeId, extent);
+        if (lines.Count == 0)
+        {
+            throw NoRailInTheCoreSquare(config);
+        }
+
+        // Mercator stretches based on latitude, and using the extent's middle latitude minimizes the error
+        double southLatitude = MercatorProjector.Unproject(new PlanePoint(extent.MinX, extent.MinY)).Latitude;
+        double northLatitude = MercatorProjector.Unproject(new PlanePoint(extent.MinX, extent.MaxY)).Latitude;
+        double centerLatitude = (southLatitude + northLatitude) / 2.0;
 
         // create a new extend window
-        ExtentInfo extent = new ExtentInfo(
-            Aspect: Math.Round(bounds.Aspect, 4),
+        ExtentInfo extentInfo = new ExtentInfo(
+            Aspect: Math.Round(extent.Aspect, 4),
             CoreRadiusKm: config.Extent.CoreRadiusKm,
-            SpanKm: Math.Round(MercatorProjector.PlaneMetresToGround(bounds.LongestSpan, centerLatitude) / 1000.0, 2));
+            SpanKm: Math.Round(MercatorProjector.PlaneMetresToGround(extent.LongestSpan, centerLatitude) / 1000.0, 2));
 
         NetworkScene scene = new(
             ArtifactVersion: ContentVersion(config.Id, zipBytes),
             City: new CityMetadata(config.Id, config.Name, config.Agency, config.Timezone),
-            Extent: extent,
-            Lines: BuildLines(selection, geoPointsByShapeId, planePointsByShapeId, bounds),
+            Extent: extentInfo,
+            Lines: lines,
             Stations: [],
             EdgeLabels: [],
             Water: []);
 
-        return new RailLayer(scene, bounds);
+        return new RailLayer(scene, extent);
     }
 
     /// <summary>
@@ -97,12 +112,12 @@ public static class NetworkSceneBuilder
                               .ToList(),
                 StringComparer.Ordinal);
 
-    private static List<LineScene> BuildLines(RailSelection selection, Dictionary<string, List<GeoPoint>> geoPointsByShapeId, Dictionary<string, List<PlanePoint>> planePointsByShapeId, ExtentRectangle bounds)
+    private static List<LineScene> BuildLines(RailSelection selection, Dictionary<string, List<PlanePoint>> planePointsByShapeId, ExtentRectangle extent)
     {
         // Trips whose shape is not in shapes.txt drop out here
         // Create a Lookup linking each routeId to all valid shapeIds associated with its trips
         ILookup<string, string> shapeIdsByRouteId = selection.Trips
-            .Where(trip => geoPointsByShapeId.ContainsKey(trip.ShapeId))
+            .Where(trip => planePointsByShapeId.ContainsKey(trip.ShapeId))
             .ToLookup(trip => trip.RouteId, trip => trip.ShapeId, StringComparer.Ordinal);
 
         List<LineScene> lines = new();
@@ -111,14 +126,12 @@ public static class NetworkSceneBuilder
             List<ShapeGeometry> shapes = shapeIdsByRouteId[route.RouteId] // pull all shapeIds linked to this route
                 .Distinct(StringComparer.Ordinal) // Remove duplicate shapeIds
                 .Order(StringComparer.Ordinal) // Sort them alphbetically
-                .Select(shapeId => new ShapeGeometry( // convert each unique shapeId into a ShapeGeometry object
-                    shapeId,
-                    CoordinateNormalizer.Flatten(planePointsByShapeId[shapeId], bounds), // scale the points relative to the bounding box
-                    Math.Round(GroundDistance.PolylineLengthM(geoPointsByShapeId[shapeId]), 1)))  // caulculate the real world length of the route, rounded to 1 decimal place
+                .SelectMany(shapeId => ClipToRuns(shapeId, planePointsByShapeId[shapeId], extent)) // cut each shape to the extent; a shape outside it gives nothing
                 .ToList();
 
-            // A route listed in routes.txt with nothing to draw, such as a seasonal route, is
-            // left off the map instead of being sent as an empty line.
+            // A route listed in routes.txt with nothing to draw, such as a seasonal route or
+            // one that lies outside the extent, is left off the map instead of being sent as
+            // an empty line.
             if (shapes.Count == 0)
             {
                 continue;
@@ -130,6 +143,26 @@ public static class NetworkSceneBuilder
         // return LineScene objects for rendering
         return lines;
     }
+
+    /// <summary>
+    /// The parts of one shape that lie inside the extent, each as its own polyline. The first
+    /// keeps the shape's id; a shape that leaves and returns gives further runs, numbered
+    /// <c>#1</c>, <c>#2</c> in the order the shape visits them.
+    /// </summary>
+    private static IEnumerable<ShapeGeometry> ClipToRuns(string shapeId, IReadOnlyList<PlanePoint> points, ExtentRectangle extent)
+        => PolylineClipper.Clip(points, extent).Select((run, runIndex) => new ShapeGeometry(
+            runIndex == 0 ? shapeId : $"{shapeId}#{runIndex}",
+            CoordinateNormalizer.Flatten(run, extent), // scale the points relative to the extent
+            Math.Round(GroundDistance.PolylineLengthM(run.Select(MercatorProjector.Unproject).ToList()), 1))); // the real world length of what is drawn, rounded to 1 decimal place
+
+    /// <summary>
+    /// The feed is sound and the config is not, so this is not the feed's exception type:
+    /// the Server answers a bad feed by naming the cached file to delete.
+    /// </summary>
+    private static InvalidOperationException NoRailInTheCoreSquare(CityConfig config)
+        => new(string.Create(
+            CultureInfo.InvariantCulture,
+            $"No rail for '{config.Id}' lies within {config.Extent.CoreRadiusKm} km of its core point ({config.Extent.Core[0]}, {config.Extent.Core[1]}). Check extent.core and extent.coreRadiusKm in the city's config."));
 
     // Gets the display name of the route
     private static string DisplayName(GtfsRoute route) => string.IsNullOrWhiteSpace(route.RouteLongName) ? route.RouteShortName : route.RouteLongName;

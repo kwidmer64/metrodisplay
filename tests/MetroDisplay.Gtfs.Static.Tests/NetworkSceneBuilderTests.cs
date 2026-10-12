@@ -1,3 +1,4 @@
+using System.Globalization;
 using MetroDisplay.Contracts;
 using MetroDisplay.Gtfs.Static.Pipeline;
 using MetroDisplay.Spatial;
@@ -226,5 +227,112 @@ public class NetworkSceneBuilderTests
         var exception = Assert.Throws<InvalidDataException>(() => Build(busesOnly));
 
         Assert.Contains("no rail shapes", exception.Message);
+    }
+
+    [Fact]
+    public void CutsShapesAtTheEdgeOfTheCoreSquare()
+    {
+        // 2 km around 42.34 N 71.08 W reaches 71.104334 W and 71.055666 W. Green runs from
+        // 71.12 W to 71.06 W, so it is cut at the west edge and ends short of the east one.
+        CityConfig config = TestConfig() with { Extent = new ExtentConfig([42.34, -71.08], CoreRadiusKm: 2) };
+
+        NetworkScene scene = NetworkSceneBuilder.Build(GtfsFixtureBuilder.TwoRailLinesAndABus().Build(), config);
+
+        ShapeGeometry green = scene.Lines.Single(line => line.Id == "Green").Shapes.Single();
+        Assert.Equal("shape-green", green.Id);
+        Assert.Equal(new[] { 0, 0.193, 0.2945, 0.1665, 0.911, 0.1108 }, green.Points);
+        // The whole shape is 4950.5 m. What is drawn is shorter.
+        Assert.Equal(3657.9, green.LengthM);
+        // The frame is the square's 4 km top to bottom, and the rail's own width across.
+        Assert.Equal(new ExtentInfo(Aspect: 0.911, CoreRadiusKm: 2, SpanKm: 4), scene.Extent);
+    }
+
+    [Fact]
+    public void LeavesOffALineWithNothingInsideTheSquare()
+    {
+        // 1 km around the core reaches 42.348993 N. Green runs along 42.35 N and above.
+        CityConfig config = TestConfig() with { Extent = new ExtentConfig([42.34, -71.08], CoreRadiusKm: 1) };
+
+        RailLayer layer = NetworkSceneBuilder.BuildLayer(GtfsFixtureBuilder.TwoRailLinesAndABus().Build(), config);
+
+        Assert.Equal(new[] { "Red" }, layer.Scene.Lines.Select(line => line.Id));
+        // The rail runs past the square on every side, so the frame is the square itself.
+        Assert.Equal(GeoBox.Around(new GeoPoint(42.34, -71.08), radiusKm: 1).ToPlane(), layer.Bounds);
+        Assert.Equal(1, layer.Scene.Extent.Aspect);
+        Assert.Equal(2, layer.Scene.Extent.SpanKm);
+    }
+
+    [Fact]
+    public void SplitsAShapeThatLeavesAndReturnsIntoNumberedRuns()
+    {
+        // shape-red heads east along 42.34 N, leaves the 2 km square at 71.055666 W, turns
+        // north outside it and comes back west along 42.35 N.
+        CityConfig config = TestConfig() with { Extent = new ExtentConfig([42.34, -71.08], CoreRadiusKm: 2) };
+        GtfsFixtureBuilder fixture = GtfsFixtureBuilder.TwoRailLinesAndABus().WithFile("shapes.txt", """
+            shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence
+            shape-red,42.3400,-71.0900,1
+            shape-red,42.3400,-71.0400,2
+            shape-red,42.3500,-71.0400,3
+            shape-red,42.3500,-71.0900,4
+            shape-red-rev,42.3400,-71.0900,1
+            shape-red-rev,42.3400,-71.0800,2
+            shape-green,42.3500,-71.1200,1
+            shape-green,42.3520,-71.1100,2
+            """);
+
+        NetworkScene scene = NetworkSceneBuilder.Build(fixture.Build(), config);
+
+        // Green lies wholly west of the square, so only Red is drawn.
+        LineScene red = Assert.Single(scene.Lines);
+        Assert.Equal(new[] { "shape-red", "shape-red#1", "shape-red-rev" }, red.Shapes.Select(shape => shape.Id));
+        Assert.Equal(new[] { 0.2945, 0.3336, 1, 0.3336 }, red.Shapes[0].Points);
+        Assert.Equal(new[] { 1, 0.0556, 0.2945, 0.0556 }, red.Shapes[1].Points);
+        // Each run is the 2.82 km from 71.09 W to the square's east edge, not the shape's whole length.
+        Assert.Equal(2821.9, red.Shapes[0].LengthM);
+        Assert.Equal(2821.5, red.Shapes[1].LengthM);
+    }
+
+    [Fact]
+    public void RefusesACityWithNoRailNearItsCore()
+    {
+        // A typo in the core's latitude puts the square 130 km north of the rail.
+        CityConfig config = TestConfig() with { Extent = new ExtentConfig([43.5, -71.08], CoreRadiusKm: 22) };
+        CultureInfo original = CultureInfo.CurrentCulture;
+        try
+        {
+            // A culture that writes decimals with a comma must not reach the message.
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => NetworkSceneBuilder.Build(GtfsFixtureBuilder.TwoRailLinesAndABus().Build(), config));
+
+            Assert.Contains("'test'", exception.Message);
+            Assert.Contains("within 22 km", exception.Message);
+            Assert.Contains("(43.5, -71.08)", exception.Message);
+            Assert.Contains("extent.core", exception.Message);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    [Fact]
+    public void RefusesACityWhoseRailOnlyPassesAroundItsSquare()
+    {
+        // One line runs north along 71.20 W and one east along 42.40 N. Their bounding box
+        // covers the 2 km square around the core, but neither line enters it.
+        CityConfig config = TestConfig() with { Extent = new ExtentConfig([42.34, -71.08], CoreRadiusKm: 2) };
+        GtfsFixtureBuilder fixture = GtfsFixtureBuilder.TwoRailLinesAndABus().WithFile("shapes.txt", """
+            shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence
+            shape-red,42.3000,-71.2000,1
+            shape-red,42.4000,-71.2000,2
+            shape-green,42.4000,-71.2000,1
+            shape-green,42.4000,-71.0000,2
+            """);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => NetworkSceneBuilder.Build(fixture.Build(), config));
+
+        Assert.Contains("within 2 km", exception.Message);
     }
 }
