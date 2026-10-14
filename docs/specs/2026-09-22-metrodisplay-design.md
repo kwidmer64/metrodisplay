@@ -747,9 +747,14 @@ no detail of their own (§1, non-goals). Design settled on 2026-10-13:
 - **Which stops are stations.** `stops.txt` is read, and `stop_times.txt` is streamed keeping
   only the rows of trips on the selected rail routes. A station is the stop's
   `parent_station`, or the stop itself where it has none, so platforms merge into one marker.
-  Position and name are the station's own `stop_lat`, `stop_lon` and `stop_name`. A station
-  outside the extent is dropped. Markers are not snapped to the track: at city scale a
-  station's centre lies within a pixel or two of its line.
+  Position and name are the station's own `stop_lat`, `stop_lon` and `stop_name`. Markers are
+  not snapped to the track: at city scale a station's centre lies within a pixel or two of its
+  line.
+- **Stations at the edge.** The extent's edge is set by the track, and a station's own position
+  is the middle of the station, which at the end of a line lies a little past the last point of
+  track. Boston's Riverside is 26 m outside the frame its own line sets. So a station within
+  100 m of ground beyond the edge is drawn on the edge. One farther out is dropped: its line
+  was cut before reaching it.
 - **`rank`.**
 
   | Rank | Meaning | Rule |
@@ -779,7 +784,7 @@ no detail of their own (§1, non-goals). Design settled on 2026-10-13:
   which has the trips. Placement is decided by the renderer, which has the pixels and the
   width of the text. Place names (slice 8) use the same placer.
 - **Where it lives.** `Gtfs.Static` reads the two files and builds ranked stations in a pure
-  `StationBuilder`. `NetworkSceneBuilder` projects them, drops those outside the extent and
+  `StationBuilder`. `NetworkSceneBuilder` projects them, drops those beyond the extent and
   normalizes. The contract does not change: `StationMarker` already carries `x`, `y`, `name`
   and `rank`. The renderer gains station drawing and the label placer.
 - **Failure.** A feed without `stops.txt` or `stop_times.txt` stops startup naming the file, as
