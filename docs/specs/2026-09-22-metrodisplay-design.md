@@ -749,9 +749,8 @@ From slice 1:
   `containFit(1000, 600, 0.5, 50)`, giving scale 500 and `originY` 50, covers it.
 - `StaticFeedCache.cs` has an unused `using CsvHelper.Configuration;`.
 - `MercatorProjector.Project` carries empty `<param>` and `<returns>` tags.
-- Comment typos: `NetworkSceneBuilder` ("latittude", "extend window", "alphbetically",
-  "caulculate", and route written where shape is meant), `ExtentRectangle` ("enumurate" and a
-  sentence cut off), `StaticFeedCache` ("doesnt").
+- Comment typos: `NetworkSceneBuilder` ("extend window", "alphbetically"), `ExtentRectangle`
+  ("enumurate" and a sentence cut off), `StaticFeedCache` ("doesnt").
 - `StaticFeedCache`'s download error prints the feed's full URL. A key carried in the query
   string would reach the log. Strip the query before printing. This one cannot wait for
   slice 16 if a city with a key in its URL is added sooner.
@@ -762,6 +761,38 @@ From slice 1:
 
 From slice 2: the list under "Deferred" in
 `docs/plans/2026-10-06-slice-02-water-and-coastline.md`.
+
+From slice 3:
+
+- The water cache file is named from a hash of the Overpass query, and the query is a raw
+  string, so its line breaks are those of the source file. A checkout with different line
+  endings names a different file and fetches the layer again. Normalize the query's line
+  breaks in `OverpassQuery.Water` before it is hashed. This one cannot wait for slice 16 if
+  the Server is first run on the Pi sooner.
+- A `coreRadiusKm` large enough to carry the core square past a pole gives an extent that is
+  not a number. Startup passes and `/api/network` then fails on every request. Refuse it in
+  `CityConfigLoader` or where the extent is built.
+- A numbered run such as `shape-red#1` can share its id with a real shape of that name.
+  Nothing reads shape ids yet. Settle it in slice 5, which is the first to key on them.
+- A shape of one point is no longer sent. A feed whose shapes inside the frame are all single
+  points is told to check `extent.core`, which is the wrong advice.
+- A cut point can land one rounding step outside the edge it was cut on, and then normalizes
+  to `-0`. Set the cut coordinate to the edge's own value.
+- `PolylineClipper` has no test for a line that leaves and returns through the same vertex, or
+  for a rectangle of no width. `NetworkSceneBuilder` has none for a network that is a single
+  north–south line. All three behave correctly when run by hand.
+- `GeoBox`'s summary describes it only as the area Overpass searches. It is also the rail's
+  core square.
+
+Three questions the slice 3 review raised and left open, for whenever a city makes one visible:
+
+- **Rail that is not drawn still sets the frame.** The extent is the bounding box of all
+  selected rail, cut to the core square. A line cut away entirely still widens it. Clipping
+  to the square first and framing on what is left would hold closer to "a system that does
+  not fill the square is not padded out".
+- **A core that only just reaches the rail** frames a sliver a few metres across and starts
+  without complaint.
+- **A network that is one straight line** has an extent of no width or no height.
 
 ### Superseded plan
 
