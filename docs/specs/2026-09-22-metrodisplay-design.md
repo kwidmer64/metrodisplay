@@ -278,8 +278,9 @@ fixture zip with no network access.
    nothing and does no work.
 2. **Filter to rail** — `route_type` in {0 tram/light rail, 1 subway/metro, 2 rail,
    5 cable tram, 7 funicular, 12 monorail}, minus any `routeFilter.exclude`. Only
-   `routes.txt`, `trips.txt`, `shapes.txt`, `stops.txt` and `feed_info.txt` are read;
-   `stop_times.txt` (the bulk of a typical zip, mostly bus data) is skipped entirely.
+   `routes.txt`, `trips.txt`, `shapes.txt`, `stops.txt` and `feed_info.txt` are read whole.
+   `stop_times.txt` (the bulk of a typical zip, mostly bus data) is streamed, keeping only
+   the rows of rail trips; stations need them (§14, slice 4).
 3. **Deduplicate shapes** — agencies commonly emit a distinct `shape_id` per trip pattern,
    so one rail line can carry dozens of near-identical polylines. Collapsing by geometry
    hash is often a 10–50× reduction before simplification runs at all.
@@ -641,7 +642,7 @@ refinement of the geometry exists.
 | 1 | Lines on screen | Boston's rail lines in route colours, fit to the window. The Server builds the scene at startup and serves `GET /api/network`; the renderer draws polylines |
 | 2 | Water and coastline | Boston's harbour, rivers and lakes filled behind the lines; OSM attribution shown |
 | 3 | True-scale extent and clip | Map framed on core ± `coreRadiusKm`; with commuter rail enabled, lines are visibly clipped |
-| 4 | Stations | Station markers; the `rank` prominence rule settled by eye |
+| 4 | Stations | A marker at every station; interchanges and termini named where the name fits |
 | 5 | Vehicle positions | `Realtime` decodes VehiclePositions and joins them to shapes; `shapeFraction`s checkable at `GET /api/frame` |
 | 6 | Live dots over SSE | `/stream` delivers `hello`, `network`, `frame`; dots drawn, snapping each poll |
 | 7 | Edge labels | `TO <TERMINUS>` where each clipped line leaves the map |
@@ -735,6 +736,58 @@ Implements §4's extent step and §5's clipping. Its design settled on 2026-10-1
   its original shape, which vehicle positions need, is added in slice 5 with its consumer.
 
 Commuter rail stays out of `cities/mbta.json`. It is switched on by hand to see the clip.
+
+### Stations (slice 4)
+
+Stations are there so a viewer can place a train: "that one is near Park Street". They carry
+no detail of their own (§1, non-goals). Design settled on 2026-10-13:
+
+- **Look.** A marker at every station. A name only at interchanges and termini, so the map is
+  not covered in text.
+- **Which stops are stations.** `stops.txt` is read, and `stop_times.txt` is streamed keeping
+  only the rows of trips on the selected rail routes. A station is the stop's
+  `parent_station`, or the stop itself where it has none, so platforms merge into one marker.
+  Position and name are the station's own `stop_lat`, `stop_lon` and `stop_name`. A station
+  outside the extent is dropped. Markers are not snapped to the track: at city scale a
+  station's centre lies within a pixel or two of its line.
+- **`rank`.**
+
+  | Rank | Meaning | Rule |
+  |---|---|---|
+  | 3 | Interchange | Served by routes of two or more different colours |
+  | 2 | Terminus | Some trip on a selected route starts or ends here |
+  | 1 | Other | Every other station |
+
+  A station that is both is rank 3. On the feed cached on 2026-10-08 Boston has 125 stations:
+  6 interchanges (Park Street, Downtown Crossing, State, Government Center, Haymarket, North
+  Station), 19 termini and 100 others.
+  - Colour, not route count, decides an interchange. Counting routes names Arlington and
+    Copley, because Green B, C, D and E are four routes. Colour groups them as a rider does.
+  - Termini include the places trips turn short, such as Kenmore, Babcock Street and Orient
+    Heights, not only the ends of the track. A train's destination is worth a name. The rule
+    counts any trip, so a station where a handful of trips a day begin (Reservoir, East
+    Somerville) is named too. A minimum share of a route's trips is the knob if that proves
+    too many by eye.
+  - Known limit: where several colours share a long trunk, as on BART, every trunk station is
+    an interchange. That is settled in slice 13 with BART on screen.
+- **Drawing.** Rank 1 is a small dot. Ranks 2 and 3 are a ring with a dark centre, and a name.
+- **Placing names.** Boston's six interchanges lie within about a kilometre, some 40 pixels of
+  a 1080p map, so their names cannot all fit. The renderer places names greedily, highest rank
+  first. For each it tries a fixed set of positions around the marker and takes the first that
+  overlaps no name already placed and no other marker, preferring one that crosses no line.
+  A name with nowhere to go is not drawn; its marker always is. Rank is decided by the Server,
+  which has the trips. Placement is decided by the renderer, which has the pixels and the
+  width of the text. Place names (slice 8) use the same placer.
+- **Where it lives.** `Gtfs.Static` reads the two files and builds ranked stations in a pure
+  `StationBuilder`. `NetworkSceneBuilder` projects them, drops those outside the extent and
+  normalizes. The contract does not change: `StationMarker` already carries `x`, `y`, `name`
+  and `rank`. The renderer gains station drawing and the label placer.
+- **Failure.** A feed without `stops.txt` or `stop_times.txt` stops startup naming the file, as
+  a feed without `shapes.txt` does. GTFS requires both.
+- **Cost.** Boston's `stop_times.txt` is 147 MB unpacked and 3.15 million rows, nearly all of
+  it buses. It is read as a stream, so memory holds only the rail rows. The time it adds to
+  startup is measured first in the slice; the artifact store (slice 14) later means it is paid
+  only when the feed changes.
 
 ### Minor clean-up (slice 16)
 
