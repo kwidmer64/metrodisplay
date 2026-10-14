@@ -80,4 +80,112 @@ public class GtfsArchiveReaderTests
         Assert.Contains("shapes.txt", exception.Message);
         Assert.Contains("shape_pt_lat", exception.Message);
     }
+
+    [Fact]
+    public void ReadsStops()
+    {
+        GtfsArchive archive = GtfsArchiveReader.Read(GtfsFixtureBuilder.TwoRailLinesAndABus().Build());
+
+        Assert.Equal(14, archive.Stops.Count);
+        GtfsStop platform = archive.Stops.Single(stop => stop.StopId == "mid-north");
+        Assert.Equal("Midway", platform.StopName);
+        Assert.Equal(42.3401, platform.Latitude);
+        Assert.Equal(-71.0801, platform.Longitude);
+        Assert.Equal("place-mid", platform.ParentStation);
+    }
+
+    [Fact]
+    public void ReadsAStopWithNoPosition()
+    {
+        // Entrances and generic nodes carry no stop_lat or stop_lon. They must not fail the read.
+        GtfsArchive archive = GtfsArchiveReader.Read(GtfsFixtureBuilder.TwoRailLinesAndABus().Build());
+
+        GtfsStop entrance = archive.Stops.Single(stop => stop.StopId == "entrance-node");
+        Assert.Null(entrance.Latitude);
+        Assert.Null(entrance.Longitude);
+        Assert.Equal("", entrance.StopName);
+    }
+
+    [Fact]
+    public void NamesTheFileWhenStopsAreMissing()
+    {
+        byte[] zipBytes = GtfsFixtureBuilder.TwoRailLinesAndABus().WithoutFile("stops.txt").Build();
+
+        var exception = Assert.Throws<InvalidDataException>(() => GtfsArchiveReader.Read(zipBytes));
+
+        Assert.Contains("stops.txt", exception.Message);
+    }
+
+    [Fact]
+    public void ReadsOnlyTheStopTimesOfWantedTrips()
+    {
+        byte[] zipBytes = GtfsFixtureBuilder.TwoRailLinesAndABus().Build();
+        HashSet<string> wantedTripIds = ["red-north-1", "green-west-1"];
+
+        IReadOnlyList<GtfsStopTime> stopTimes = GtfsArchiveReader.ReadStopTimes(zipBytes, wantedTripIds);
+
+        Assert.Equal(7, stopTimes.Count);
+        Assert.All(stopTimes, stopTime => Assert.Contains(stopTime.TripId, wantedTripIds));
+        Assert.Contains(new GtfsStopTime("green-west-1", "cross-green", 2), stopTimes);
+    }
+
+    [Fact]
+    public void MapsStopTimeColumnsByHeaderNameNotPosition()
+    {
+        byte[] zipBytes = GtfsFixtureBuilder.TwoRailLinesAndABus()
+            .WithFile("stop_times.txt", """
+                stop_sequence,pickup_type,stop_id,trip_id
+                7,0,mid-north,red-north-1
+                """)
+            .Build();
+
+        IReadOnlyList<GtfsStopTime> stopTimes = GtfsArchiveReader.ReadStopTimes(zipBytes, new HashSet<string> { "red-north-1" });
+
+        Assert.Equal(new GtfsStopTime("red-north-1", "mid-north", 7), Assert.Single(stopTimes));
+    }
+
+    [Fact]
+    public void NamesTheFileWhenStopTimesAreMissing()
+    {
+        byte[] zipBytes = GtfsFixtureBuilder.TwoRailLinesAndABus().WithoutFile("stop_times.txt").Build();
+
+        var exception = Assert.Throws<InvalidDataException>(
+            () => GtfsArchiveReader.ReadStopTimes(zipBytes, new HashSet<string> { "red-north-1" }));
+
+        Assert.Contains("stop_times.txt", exception.Message);
+    }
+
+    [Fact]
+    public void NamesTheColumnWhenAStopTimesColumnIsMissing()
+    {
+        byte[] zipBytes = GtfsFixtureBuilder.TwoRailLinesAndABus()
+            .WithFile("stop_times.txt", """
+                trip_id,stop_id
+                red-north-1,mid-north
+                """)
+            .Build();
+
+        var exception = Assert.Throws<InvalidDataException>(
+            () => GtfsArchiveReader.ReadStopTimes(zipBytes, new HashSet<string> { "red-north-1" }));
+
+        Assert.Contains("stop_times.txt", exception.Message);
+        Assert.Contains("stop_sequence", exception.Message);
+    }
+
+    [Fact]
+    public void NamesTheValueWhenAStopSequenceIsNotANumber()
+    {
+        byte[] zipBytes = GtfsFixtureBuilder.TwoRailLinesAndABus()
+            .WithFile("stop_times.txt", """
+                trip_id,stop_id,stop_sequence
+                red-north-1,mid-north,second
+                """)
+            .Build();
+
+        var exception = Assert.Throws<InvalidDataException>(
+            () => GtfsArchiveReader.ReadStopTimes(zipBytes, new HashSet<string> { "red-north-1" }));
+
+        Assert.Contains("stop_times.txt", exception.Message);
+        Assert.Contains("'second'", exception.Message);
+    }
 }
