@@ -86,6 +86,39 @@ public class CityConfigLoaderTests
         Assert.Contains("'coreRadiusKm'", exception.Message);
     }
 
+    [Theory]
+    [InlineData("[42.3555]")]
+    [InlineData("[42.3555, -71.0605, 12]")]
+    [InlineData("[]")]
+    [InlineData("[142.3555, -71.0605]")]
+    [InlineData("[42.3555, -271.0605]")]
+    public void RejectsACoreThatIsNotALatitudeAndALongitude(string core)
+    {
+        // The map is framed on this point, so a bad one has to be named here and not surface
+        // later as an index error.
+        string withBadCore = SampleJson.Replace("[42.3555, -71.0605]", core);
+        Assert.Contains($"\"core\": {core}", withBadCore);
+
+        var exception = Assert.Throws<JsonException>(
+            () => CityConfigLoader.Load(withBadCore, SampleEnvironment()));
+
+        Assert.Contains("extent.core", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-22")]
+    public void RejectsACoreRadiusThatIsNotPositive(string radiusKm)
+    {
+        string withBadRadius = SampleJson.Replace("\"coreRadiusKm\": 22", $"\"coreRadiusKm\": {radiusKm}");
+        Assert.Contains($"\"coreRadiusKm\": {radiusKm}", withBadRadius);
+
+        var exception = Assert.Throws<JsonException>(
+            () => CityConfigLoader.Load(withBadRadius, SampleEnvironment()));
+
+        Assert.Contains("extent.coreRadiusKm", exception.Message);
+    }
+
     [Fact]
     public void RejectsAnUnknownSetting()
     {

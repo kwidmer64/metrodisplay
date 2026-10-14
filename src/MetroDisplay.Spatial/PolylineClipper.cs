@@ -13,8 +13,8 @@ public static class PolylineClipper
     /// <param name="rectangle">The area to keep.</param>
     /// <returns>
     /// One run per visit to the rectangle, in the order the polyline makes them, each with at
-    /// least two points. Empty when the polyline never enters. A polyline wholly inside comes
-    /// back as one run holding its own points, unchanged.
+    /// least two points and some length. Empty when the polyline never enters or has no length
+    /// itself. A polyline wholly inside comes back as one run holding its own points, unchanged.
     /// </returns>
     public static IReadOnlyList<IReadOnlyList<PlanePoint>> Clip(IReadOnlyList<PlanePoint> points, ExtentRectangle rectangle)
     {
@@ -46,6 +46,9 @@ public static class PolylineClipper
             }
         }
 
+        // A repeated point is kept as a segment, so one that sits on the edge with the line
+        // outside on both sides leaves a run that goes nowhere. That is a touch, not a visit.
+        runs.RemoveAll(run => run.All(point => point == run[0]));
         return runs;
     }
 

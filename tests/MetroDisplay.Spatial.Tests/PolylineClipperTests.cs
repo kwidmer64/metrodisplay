@@ -112,6 +112,29 @@ public class PolylineClipperTests
         Assert.Equal(line, run);
     }
 
+    [Fact]
+    public void DrawsNothingForARepeatedPointThatOnlyTouchesTheEdge()
+    {
+        // Feeds repeat points. A repeat sitting on the edge, with the line outside on both
+        // sides of it, is a touch and not a visit.
+        Assert.Empty(PolylineClipper.Clip(Line((150, 50), (100, 50), (100, 50), (150, 50)), Rectangle));
+        Assert.Empty(PolylineClipper.Clip(Line((90, 110), (100, 100), (100, 100), (110, 90)), Rectangle));
+    }
+
+    [Fact]
+    public void DrawsNothingForALineOfNoLength()
+    {
+        Assert.Empty(PolylineClipper.Clip(Line((10, 10), (10, 10), (10, 10)), Rectangle));
+    }
+
+    [Fact]
+    public void KeepsARepeatedPointOnTheEdgeWhenTheLineGoesOnInside()
+    {
+        IReadOnlyList<PlanePoint> run = Assert.Single(PolylineClipper.Clip(Line((150, 50), (100, 50), (100, 50), (50, 50)), Rectangle));
+
+        Assert.Equal(Line((100, 50), (100, 50), (50, 50)), run);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]

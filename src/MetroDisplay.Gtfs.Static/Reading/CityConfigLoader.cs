@@ -33,7 +33,7 @@ public static partial class CityConfigLoader
     /// <param name="environment">Values for <c>${VAR}</c> placeholders, keyed by variable name.</param>
     /// <returns>The deserialized config, with every placeholder replaced.</returns>
     /// <exception cref="InvalidOperationException">A placeholder names a variable that <paramref name="environment"/> does not contain.</exception>
-    /// <exception cref="JsonException">The JSON is malformed, omits a required setting, or contains a setting that does not exist.</exception>
+    /// <exception cref="JsonException">The JSON is malformed, omits a required setting, contains a setting that does not exist, or gives an extent that cannot frame a map.</exception>
     public static CityConfig Load(string json, IReadOnlyDictionary<string, string> environment)
     {
         // The resolved JSON string
@@ -53,7 +53,29 @@ public static partial class CityConfigLoader
         });
 
         // Deserialize the JSON string into a CityConfig object
-        return JsonSerializer.Deserialize<CityConfig>(resolved, StrictOptions) ?? throw new InvalidOperationException("City config deserialized to null.");
+        CityConfig config = JsonSerializer.Deserialize<CityConfig>(resolved, StrictOptions) ?? throw new InvalidOperationException("City config deserialized to null.");
+        RequireAUsableExtent(config.Extent);
+        return config;
+    }
+
+    /// <summary>
+    /// The map is framed on the core point and radius, so values that cannot be one are refused
+    /// here, by name, instead of failing later as an index error or a map of no size.
+    /// </summary>
+    private static void RequireAUsableExtent(ExtentConfig extent)
+    {
+        bool coreIsAPosition = extent.Core.Count == 2
+            && extent.Core[0] is >= -90 and <= 90
+            && extent.Core[1] is >= -180 and <= 180;
+        if (!coreIsAPosition)
+        {
+            throw new JsonException("City config setting extent.core must be [latitude, longitude], with latitude from -90 to 90 and longitude from -180 to 180.");
+        }
+
+        if (!(extent.CoreRadiusKm > 0) || double.IsInfinity(extent.CoreRadiusKm))
+        {
+            throw new JsonException("City config setting extent.coreRadiusKm must be greater than zero.");
+        }
     }
 
     /// <summary>
