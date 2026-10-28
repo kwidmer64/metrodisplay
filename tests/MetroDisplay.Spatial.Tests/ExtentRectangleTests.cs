@@ -80,4 +80,19 @@ public class ExtentRectangleTests
 
         Assert.Equal(new ExtentRectangle(MinX: 100, MinY: 20, MaxX: 100, MaxY: 60), first.Intersect(second));
     }
+
+    [Fact]
+    public void ClampsAPointToTheNearestPointOfTheRectangle()
+    {
+        var rectangle = new ExtentRectangle(MinX: 0, MinY: 0, MaxX: 100, MaxY: 50);
+
+        // Inside or on the edge: unchanged.
+        Assert.Equal(new PlanePoint(40, 20), rectangle.Clamp(new PlanePoint(40, 20)));
+        Assert.Equal(new PlanePoint(100, 50), rectangle.Clamp(new PlanePoint(100, 50)));
+        // Past one edge: moved straight back onto it.
+        Assert.Equal(new PlanePoint(100, 20), rectangle.Clamp(new PlanePoint(120, 20)));
+        Assert.Equal(new PlanePoint(40, 0), rectangle.Clamp(new PlanePoint(40, -5)));
+        // Past a corner: moved to the corner.
+        Assert.Equal(new PlanePoint(0, 50), rectangle.Clamp(new PlanePoint(-5, 60)));
+    }
 }

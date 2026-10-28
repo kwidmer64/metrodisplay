@@ -335,4 +335,67 @@ public class NetworkSceneBuilderTests
 
         Assert.Contains("within 2 km", exception.Message);
     }
+
+    [Fact]
+    public void PlacesStationsInTheSameFrameAsTheLines()
+    {
+        NetworkScene scene = Build(GtfsFixtureBuilder.TwoRailLinesAndABus());
+
+        // The frame runs from 71.12 W to 71.06 W and from 42.36 N down to 42.32 N. North End is
+        // Red's northern end, so it sits on the top edge: y is 0.
+        Assert.Equal(
+            new[]
+            {
+                new StationMarker(1, 0.1353, "East Side", 2),
+                new StationMarker(0.775, 0.1579, "Crossing", 3),
+                new StationMarker(0.6667, 0.451, "Midway", 1),
+                new StationMarker(0.8333, 0, "North End", 2),
+                new StationMarker(0.5, 0.9019, "South End", 2),
+                new StationMarker(0, 0.2255, "West Side", 2),
+            },
+            scene.Stations);
+    }
+
+    [Fact]
+    public void LeavesOutStationsBeyondTheExtent()
+    {
+        // 1 km around the core reaches from 42.331 N to 42.349 N. Only Midway, at 42.34 N, is
+        // inside. Crossing is the nearest of the rest, some 450 m past the north edge.
+        CityConfig config = TestConfig() with { Extent = new ExtentConfig([42.34, -71.08], CoreRadiusKm: 1) };
+
+        NetworkScene scene = NetworkSceneBuilder.Build(GtfsFixtureBuilder.TwoRailLinesAndABus().Build(), config);
+
+        Assert.Equal(new[] { "Midway" }, scene.Stations.Select(station => station.Name));
+    }
+
+    [Fact]
+    public void MovesAStationJustPastTheEdgeOntoIt()
+    {
+        // The frame's north edge is the last point of Red's track, at 42.36 N. North End's own
+        // position is 0.0005 degrees, about 55 m, beyond it: the middle of a station past the
+        // end of the line. South End's is 0.002 degrees, about 220 m, beyond the south edge.
+        GtfsFixtureBuilder fixture = GtfsFixtureBuilder.TwoRailLinesAndABus().WithFile("stops.txt", """
+            stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station
+            place-south,South End,42.3180,-71.0900,1,
+            south-platform,South End,42.3201,-71.0901,0,place-south
+            place-north,North End,42.3605,-71.0700,1,
+            north-platform,North End,42.3601,-71.0701,0,place-north
+            """);
+
+        NetworkScene scene = Build(fixture);
+
+        // North End is drawn on the edge, where its line ends. South End is too far out to be
+        // a station on the map.
+        Assert.Equal(new[] { new StationMarker(0.8333, 0, "North End", 2) }, scene.Stations);
+    }
+
+    [Fact]
+    public void RefusesAFeedWithoutStopTimes()
+    {
+        GtfsFixtureBuilder fixture = GtfsFixtureBuilder.TwoRailLinesAndABus().WithoutFile("stop_times.txt");
+
+        var exception = Assert.Throws<InvalidDataException>(() => Build(fixture));
+
+        Assert.Contains("stop_times.txt", exception.Message);
+    }
 }

@@ -44,4 +44,12 @@ public static class MercatorProjector
     /// <param name="planeMetres">Distance measured between projected points.</param>
     /// <param name="latitudeDegrees">Latitude the distance sits at.</param>
     public static double PlaneMetresToGround(double planeMetres, double latitudeDegrees) => planeMetres * Math.Cos(latitudeDegrees * DegreesToRadians);
+
+    /// <summary>
+    /// Converts a ground distance to the plane distance that represents it at a given latitude.
+    /// The inverse of <see cref="PlaneMetresToGround"/>.
+    /// </summary>
+    /// <param name="groundMetres">Distance measured on the ground.</param>
+    /// <param name="latitudeDegrees">Latitude the distance sits at.</param>
+    public static double GroundMetresToPlane(double groundMetres, double latitudeDegrees) => groundMetres / Math.Cos(latitudeDegrees * DegreesToRadians);
 }

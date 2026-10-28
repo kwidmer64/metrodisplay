@@ -50,10 +50,11 @@ IReadOnlyList<WaterArea> water = await WaterLayerLoader.LoadAsync(osmCache, conf
 NetworkScene scene = rail.Scene with { Water = water };
 
 app.Logger.LogInformation(
-    "Built {ArtifactVersion}: {LineCount} lines, {ShapeCount} shapes, {WaterCount} water areas",
+    "Built {ArtifactVersion}: {LineCount} lines, {ShapeCount} shapes, {StationCount} stations, {WaterCount} water areas",
     scene.ArtifactVersion,
     scene.Lines.Count,
     scene.Lines.Sum(line => line.Shapes.Count),
+    scene.Stations.Count,
     scene.Water.Count);
 
 app.MapGet("/api/network", () => TypedResults.Json(scene, JsonDefaults.Options));

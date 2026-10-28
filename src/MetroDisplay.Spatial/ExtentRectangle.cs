@@ -42,6 +42,12 @@ public readonly record struct ExtentRectangle(double MinX, double MinY, double M
     }
 
     /// <summary>
+    /// The point of the rectangle nearest to <paramref name="point"/>: the point itself when it
+    /// is inside or on an edge.
+    /// </summary>
+    public PlanePoint Clamp(PlanePoint point) => new(Math.Clamp(point.X, MinX, MaxX), Math.Clamp(point.Y, MinY, MaxY));
+
+    /// <summary>
     /// The smallest rectangle containing every point.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="points"/> is empty.</exception>

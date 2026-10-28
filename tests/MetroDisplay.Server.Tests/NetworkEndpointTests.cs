@@ -233,5 +233,20 @@ public sealed class NetworkEndpointTests : IDisposable
         Assert.DoesNotContain("Delete it to download the feed again", exception.ToString());
     }
 
+    [Fact]
+    public async Task ServesStationsWithTheScene()
+    {
+        using WebApplicationFactory<Program> factory = CreateFactory("test");
+
+        JsonElement network = await GetNetworkAsync(factory);
+
+        JsonElement[] stations = network.GetProperty("stations").EnumerateArray().ToArray();
+        Assert.Equal(6, stations.Length);
+        JsonElement crossing = stations.Single(station => station.GetProperty("name").GetString() == "Crossing");
+        Assert.Equal(3, crossing.GetProperty("rank").GetInt32());
+        Assert.Equal(0.775, crossing.GetProperty("x").GetDouble());
+        Assert.Equal(0.1579, crossing.GetProperty("y").GetDouble());
+    }
+
     public void Dispose() => workspace.Dispose();
 }

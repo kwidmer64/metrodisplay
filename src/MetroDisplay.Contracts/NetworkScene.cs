@@ -7,7 +7,7 @@ namespace MetroDisplay.Contracts;
 /// <param name="City">Name of the city.</param>
 /// <param name="Extent">The geographic window that every normalized coordinate in the scene is relative to.</param>
 /// <param name="Lines">Rail lines to draw.</param>
-/// <param name="Stations">Parent stations inside the extent.</param>
+/// <param name="Stations">Rail stations in the extent, each with its platforms merged into one marker.</param>
 /// <param name="EdgeLabels">Terminus labels placed where clipped lines leave the extent.</param>
 /// <param name="Water">Water bodies drawn behind the lines. Empty when water is unavailable.</param>
 public sealed record NetworkScene(string ArtifactVersion, CityMetadata City, ExtentInfo Extent, IReadOnlyList<LineScene> Lines, IReadOnlyList<StationMarker> Stations, IReadOnlyList<EdgeLabel> EdgeLabels, IReadOnlyList<WaterArea> Water);
@@ -52,7 +52,7 @@ public sealed record ShapeGeometry(string Id, IReadOnlyList<double> Points, doub
 /// <param name="X">Horizontal position within the extent.</param>
 /// <param name="Y">Vertical position within the extent. 0 is the top.</param>
 /// <param name="Name">Name as shown on screen.</param>
-/// <param name="Rank">Prominence hint for drawing. Currently always 1, the rule is decided once stations are visible.</param>
+/// <param name="Rank">Prominence: 1 for an ordinary station, 2 for a terminus, 3 for an interchange. A renderer names the stations of rank 2 and above that it has room for.</param>
 public sealed record StationMarker(double X, double Y, string Name, int Rank);
 
 /// <summary>

@@ -70,4 +70,14 @@ public class MercatorProjectorTests
         Assert.Equal(latitude, returned.Latitude, precision: 11);
         Assert.Equal(longitude, returned.Longitude, precision: 11);
     }
+
+    [Fact]
+    public void StretchesGroundDistanceIntoPlaneDistanceAwayFromTheEquator()
+    {
+        // The inverse of PlaneMetresToGround: 1000 m of ground at latitude 42 is about 1346 plane units.
+        double planeMetres = MercatorProjector.GroundMetresToPlane(1000, latitudeDegrees: 42);
+
+        Assert.Equal(1000 / Math.Cos(42 * Math.PI / 180), planeMetres, precision: 3);
+        Assert.Equal(1000, MercatorProjector.PlaneMetresToGround(planeMetres, latitudeDegrees: 42), precision: 6);
+    }
 }
