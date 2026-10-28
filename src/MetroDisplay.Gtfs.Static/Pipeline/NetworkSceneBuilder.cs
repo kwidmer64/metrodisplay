@@ -171,7 +171,7 @@ public static class NetworkSceneBuilder
     /// GTFS specifies six hex digits without a leading <c>#</c>. Agencies vary, so case and a
     /// stray <c>#</c> are tolerated; anything else falls back to grey.
     /// </summary>
-    private static string FormatColor(string routeColor)
+    internal static string FormatColor(string routeColor)
     {
         // trim the hex input, then return the result is valid hex
         // returns fallback color if invalid
