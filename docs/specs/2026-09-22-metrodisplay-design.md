@@ -732,6 +732,13 @@ Implements §4's extent step and §5's clipping. Its design settled on 2026-10-1
   the extent and the water box coincide. Water then has nothing to run on into, and a screen
   wider than the map shows empty bands beside it. Fetching water for a wider box is a separate
   decision, taken once that case is on screen.
+- **Decided 2026-10-29, built later.** That case is now on screen: at a small radius the map
+  is a square in the middle of a wide screen. Instead, the map should be `2 · coreRadiusKm`
+  tall and as wide as each display allows, so a 16:9 screen and a browser window of another
+  shape each show as much of the city as fits their own width, at the same scale. Rail and
+  water then have to reach past the square's sides, and since only the renderer knows a
+  window's shape, the final framing has to happen there. A window taller than it is wide is
+  still to be decided. This waits until the display works end to end.
 - **Left for later.** Edge labels at the cut points are slice 7. Where each run starts along
   its original shape, which vehicle positions need, is added in slice 5 with its consumer.
 
