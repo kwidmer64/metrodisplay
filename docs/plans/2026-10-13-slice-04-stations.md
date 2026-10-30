@@ -176,7 +176,7 @@ The fixture's stations, used by every later task:
 `bus-stop` is served only by the bus, and the bus also calls at `mid-north`. `entrance-node`
 is a station entrance with no position.
 
-- [ ] **Step 1: Give the standard fixture its stops and stop times**
+- [x] **Step 1: Give the standard fixture its stops and stop times**
 
 In `GtfsFixtureBuilder.TwoRailLinesAndABus()`, the `shapes.txt` file is the last in the
 chain and ends `""");`. Change that `;` so the chain carries on, and add two files after it:
@@ -231,7 +231,7 @@ Update the method's summary to say so:
     /// </summary>
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Add to `GtfsArchiveReaderTests`:
 
@@ -345,7 +345,7 @@ Add to `GtfsArchiveReaderTests`:
     }
 ```
 
-- [ ] **Step 3: Run to see them fail**
+- [x] **Step 3: Run to see them fail**
 
 ```bash
 dotnet build tests/MetroDisplay.Gtfs.Static.Tests
@@ -354,7 +354,7 @@ dotnet build tests/MetroDisplay.Gtfs.Static.Tests
 Expected: errors CS1061 (`GtfsArchive` has no `Stops`), CS0246 (`GtfsStop`, `GtfsStopTime`)
 and CS0117 (`GtfsArchiveReader` has no `ReadStopTimes`).
 
-- [ ] **Step 4: Add the records**
+- [x] **Step 4: Add the records**
 
 In `GtfsRecords.cs`, replace the `GtfsArchive` record and its doc comment:
 
@@ -416,7 +416,7 @@ public sealed class GtfsStop
 public sealed record GtfsStopTime(string TripId, string StopId, int Sequence);
 ```
 
-- [ ] **Step 5: Read stops, and stream stop times**
+- [x] **Step 5: Read stops, and stream stop times**
 
 In `GtfsArchiveReader.cs`:
 
@@ -509,7 +509,7 @@ Add this method after `Read`:
     }
 ```
 
-- [ ] **Step 6: Run to see them pass**
+- [x] **Step 6: Run to see them pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests
@@ -519,7 +519,7 @@ Expected: 57 passed. The 49 that predate this task pass unchanged: none of them 
 stations yet, and a fixture that replaces `routes.txt`, `trips.txt` or `shapes.txt` keeps the
 standard stops and stop times.
 
-- [ ] **Step 7: Run everything**
+- [x] **Step 7: Run everything**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -527,7 +527,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: 164 passed (Spatial 46, Osm 40, Gtfs.Static 57, Server 21), 0 warnings.
 
-- [ ] **Step 8: Hand off**
+- [x] **Step 8: Hand off**
 
 ```
 feat: read stops and rail stop times
@@ -565,7 +565,7 @@ The rules, from spec §14:
   highest `stop_sequence`, not its first and last row.
 - **Other (1):** everything else. A station that is both interchange and terminus is 3.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/MetroDisplay.Gtfs.Static.Tests/StationBuilderTests.cs`:
 
@@ -810,7 +810,7 @@ public class StationBuilderTests
 }
 ```
 
-- [ ] **Step 2: Run to see them fail**
+- [x] **Step 2: Run to see them fail**
 
 ```bash
 dotnet build tests/MetroDisplay.Gtfs.Static.Tests
@@ -818,7 +818,7 @@ dotnet build tests/MetroDisplay.Gtfs.Static.Tests
 
 Expected: errors CS0246 (`Station`) and CS0103 (`StationBuilder`).
 
-- [ ] **Step 3: Let the station builder see how a line's colour is drawn**
+- [x] **Step 3: Let the station builder see how a line's colour is drawn**
 
 In `NetworkSceneBuilder.cs`, change `FormatColor` from `private` to `internal`:
 
@@ -828,7 +828,7 @@ In `NetworkSceneBuilder.cs`, change `FormatColor` from `private` to `internal`:
 
 Nothing else in that file changes in this task.
 
-- [ ] **Step 4: Write the station builder**
+- [x] **Step 4: Write the station builder**
 
 `src/MetroDisplay.Gtfs.Static/Pipeline/StationBuilder.cs`:
 
@@ -962,7 +962,7 @@ public static class StationBuilder
 }
 ```
 
-- [ ] **Step 5: Run to see them pass**
+- [x] **Step 5: Run to see them pass**
 
 ```bash
 dotnet test tests/MetroDisplay.Gtfs.Static.Tests
@@ -970,7 +970,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests
 
 Expected: 69 passed.
 
-- [ ] **Step 6: Hand off**
+- [x] **Step 6: Hand off**
 
 ```
 feat: build ranked stations from stop times
@@ -1015,7 +1015,7 @@ Riverside is 26 m out. So a station up to `StationReachM` (100 m of ground) beyo
 moved onto the edge and kept. Farther out, the line was cut before reaching it, and it is
 left out.
 
-- [ ] **Step 1: Write the failing geometry tests**
+- [x] **Step 1: Write the failing geometry tests**
 
 Add to `ExtentRectangleTests`:
 
@@ -1050,7 +1050,7 @@ Add to `MercatorProjectorTests`:
     }
 ```
 
-- [ ] **Step 2: Write the failing builder tests**
+- [x] **Step 2: Write the failing builder tests**
 
 Add to `NetworkSceneBuilderTests`:
 
@@ -1119,7 +1119,7 @@ Add to `NetworkSceneBuilderTests`:
     }
 ```
 
-- [ ] **Step 3: Run to see them fail**
+- [x] **Step 3: Run to see them fail**
 
 ```bash
 dotnet build tests/MetroDisplay.Spatial.Tests
@@ -1131,7 +1131,7 @@ Expected: the first fails to build with CS1061 (`ExtentRectangle` has no `Clamp`
 three report an empty `Stations`, and `RefusesAFeedWithoutStopTimes` reports that no exception
 was thrown.
 
-- [ ] **Step 4: Write `Clamp` and `GroundMetresToPlane`**
+- [x] **Step 4: Write `Clamp` and `GroundMetresToPlane`**
 
 In `ExtentRectangle.cs`, after `Intersect`:
 
@@ -1155,7 +1155,7 @@ In `MercatorProjector.cs`, after `PlaneMetresToGround`:
     public static double GroundMetresToPlane(double groundMetres, double latitudeDegrees) => groundMetres / Math.Cos(latitudeDegrees * DegreesToRadians);
 ```
 
-- [ ] **Step 5: Build the markers**
+- [x] **Step 5: Build the markers**
 
 In `NetworkSceneBuilder.cs`:
 
@@ -1235,7 +1235,7 @@ Add this method after `ClipToRuns`:
     }
 ```
 
-- [ ] **Step 6: Say what the contract now carries**
+- [x] **Step 6: Say what the contract now carries**
 
 In `src/MetroDisplay.Contracts/NetworkScene.cs`, replace two doc lines. On `NetworkScene`:
 
@@ -1249,7 +1249,7 @@ On `StationMarker`:
 /// <param name="Rank">Prominence: 1 for an ordinary station, 2 for a terminus, 3 for an interchange. A renderer names the stations of rank 2 and above that it has room for.</param>
 ```
 
-- [ ] **Step 7: Run the builder and rectangle tests**
+- [x] **Step 7: Run the builder and rectangle tests**
 
 ```bash
 dotnet test tests/MetroDisplay.Spatial.Tests
@@ -1258,7 +1258,7 @@ dotnet test tests/MetroDisplay.Gtfs.Static.Tests
 
 Expected: 48 passed, then 73 passed.
 
-- [ ] **Step 8: Write the failing Server test**
+- [x] **Step 8: Write the failing Server test**
 
 Add to `NetworkEndpointTests`:
 
@@ -1279,7 +1279,7 @@ Add to `NetworkEndpointTests`:
     }
 ```
 
-- [ ] **Step 9: Run it**
+- [x] **Step 9: Run it**
 
 ```bash
 dotnet test tests/MetroDisplay.Server.Tests --filter "FullyQualifiedName~ServesStationsWithTheScene"
@@ -1289,7 +1289,7 @@ Expected: PASS. The Server serves whatever the builder returns, so no Server cod
 for it. The test is there so the wire names `stations`, `name`, `rank`, `x`, `y` are pinned
 where the renderer reads them.
 
-- [ ] **Step 10: Count stations in the startup log**
+- [x] **Step 10: Count stations in the startup log**
 
 In `Program.cs`, replace the `LogInformation` call:
 
@@ -1303,7 +1303,7 @@ app.Logger.LogInformation(
     scene.Water.Count);
 ```
 
-- [ ] **Step 11: Run everything**
+- [x] **Step 11: Run everything**
 
 ```bash
 dotnet test MetroDisplay.slnx
@@ -1311,7 +1311,7 @@ dotnet test MetroDisplay.slnx
 
 Expected: 183 passed (Spatial 48, Osm 40, Gtfs.Static 73, Server 22), 0 warnings.
 
-- [ ] **Step 12: Hand off**
+- [x] **Step 12: Hand off**
 
 ```
 feat: serve stations with the scene
@@ -1351,7 +1351,7 @@ a name already placed, or covers a marker. Of what is left, the first that cross
 wins. If every one crosses a line, the first is used anyway. If none is left, the name is not
 placed.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `web/src/labels.test.ts`:
 
@@ -1477,7 +1477,7 @@ describe('segmentCrossesBox', () => {
 });
 ```
 
-- [ ] **Step 2: Run to see them fail**
+- [x] **Step 2: Run to see them fail**
 
 ```bash
 cd web
@@ -1486,7 +1486,7 @@ npx vitest run src/labels.test.ts
 
 Expected: FAIL, cannot find module `./labels`.
 
-- [ ] **Step 3: Write the placer**
+- [x] **Step 3: Write the placer**
 
 `web/src/labels.ts`:
 
@@ -1643,7 +1643,7 @@ export function segmentCrossesBox(startX: number, startY: number, endX: number, 
 }
 ```
 
-- [ ] **Step 4: Run to see them pass**
+- [x] **Step 4: Run to see them pass**
 
 ```bash
 npx vitest run src/labels.test.ts
@@ -1652,7 +1652,7 @@ npx tsc
 
 Expected: 14 passed, and `tsc` prints nothing.
 
-- [ ] **Step 5: Hand off**
+- [x] **Step 5: Hand off**
 
 ```
 feat: place map names clear of each other
@@ -1686,7 +1686,7 @@ What is drawn: a dot of radius 1.5 px for rank 1; a ring of radius 3.5 px with a
 page's background colour for ranks 2 and 3; an 11 px name beside each ring that has room. All
 125 markers are obstacles to every name, so a name never sits on a neighbouring station.
 
-- [ ] **Step 1: Add stations to the hand-written contract types**
+- [x] **Step 1: Add stations to the hand-written contract types**
 
 In `web/src/contract.ts`, add one member to `NetworkScene`, between `lines` and `water`:
 
@@ -1706,7 +1706,7 @@ export interface StationMarker {
 }
 ```
 
-- [ ] **Step 2: Keep the water tests compiling**
+- [x] **Step 2: Keep the water tests compiling**
 
 `NetworkScene` now requires `stations`. In `web/src/draw.test.ts`, in `sceneWith`, change
 `lines: [], water };` to:
@@ -1715,7 +1715,7 @@ export interface StationMarker {
 lines: [], stations: [], water };
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `web/src/stations.test.ts`:
 
@@ -1831,7 +1831,7 @@ describe('drawStations', () => {
 });
 ```
 
-- [ ] **Step 4: Run to see them fail**
+- [x] **Step 4: Run to see them fail**
 
 ```bash
 npx vitest run src/stations.test.ts
@@ -1839,7 +1839,7 @@ npx vitest run src/stations.test.ts
 
 Expected: FAIL, cannot find module `./stations`.
 
-- [ ] **Step 5: Write the drawing**
+- [x] **Step 5: Write the drawing**
 
 `web/src/stations.ts`:
 
@@ -1953,7 +1953,7 @@ function linesInPixels(scene: NetworkScene, fit: Fit): number[][] {
 }
 ```
 
-- [ ] **Step 6: Call it from the page**
+- [x] **Step 6: Call it from the page**
 
 In `web/src/main.ts`:
 
@@ -1975,7 +1975,7 @@ In the status line, add the station count:
     statusLine.textContent = `${scene.lines.length} lines · ${scene.stations.length} stations · ${scene.artifactVersion}${attribution}`;
 ```
 
-- [ ] **Step 7: Run everything in the renderer**
+- [x] **Step 7: Run everything in the renderer**
 
 ```bash
 npx vitest run
@@ -1984,7 +1984,7 @@ npx tsc
 
 Expected: 28 passed in 4 files, and `tsc` prints nothing.
 
-- [ ] **Step 8: Hand off**
+- [x] **Step 8: Hand off**
 
 ```
 feat: draw station markers and names
@@ -2004,7 +2004,7 @@ and, where there is room, a name.
 No new code. Tests cannot see two things this task looks at: what Boston's real stations come
 out as, and whether the map reads well.
 
-- [ ] **Step 1: Boston's numbers**
+- [x] **Step 1: Boston's numbers**
 
 ```bash
 dotnet run --project src/MetroDisplay.Server
@@ -2031,7 +2031,7 @@ Expected:
 [{'x': 0, 'y': 0.4341, 'name': 'Riverside', 'rank': 2}]
 ```
 
-- [ ] **Step 2: By eye**
+- [x] **Step 2: By eye**
 
 Run `npm run dev` in `web/` and open `http://localhost:5173`.
 
@@ -2057,7 +2057,7 @@ here if the developer asks for a different look, re-run `npx vitest run`, and sa
 changed in the hand-off. `RING_RADIUS_PX` and `DOT_RADIUS_PX` appear in the expected values of
 `stations.test.ts`.
 
-- [ ] **Step 3: Commuter rail, as a second look**
+- [x] **Step 3: Commuter rail, as a second look**
 
 In `cities/mbta.json` change `"routeTypes": [0, 1]` to `"routeTypes": [0, 1, 2]`, restart
 the Server and reload.
@@ -2074,7 +2074,7 @@ git status --short cities/
 
 Expected: no output.
 
-- [ ] **Step 4: Tick the plan and hand off**
+- [x] **Step 4: Tick the plan and hand off**
 
 Tick every box in this plan. The commit carries the plan, and `stations.ts` only if Step 2
 changed it:
