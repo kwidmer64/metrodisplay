@@ -852,6 +852,40 @@ Three questions the slice 3 review raised and left open, for whenever a city mak
   without complaint.
 - **A network that is one straight line** has an extent of no width or no height.
 
+From slice 4:
+
+- A `stops.txt` row with an empty `stop_id`, such as a trailing `,,,,,` line, makes
+  `StationBuilder` treat every stop with no parent as a platform of station `""`, which has no
+  position, so all of them vanish. Skip empty ids when indexing stops, or require a non-empty
+  `parent_station` before looking it up.
+- A feed with no `route_color` gives every route the fallback colour, so no station is an
+  interchange. Calls by trips whose route draws no line still count towards colour and
+  terminus, and the per-city palette override (§4) will stop matching `FormatColor`. Take the
+  colours from the built lines instead, keying fallback-coloured routes by route id.
+- `MovesAStationJustPastTheEdgeOntoIt` pins neither the 100 m reach nor
+  `GroundMetresToPlane`: North End is 55 m out, inside the reach with or without the
+  conversion. Add a station about 89 m out, kept only with the conversion, and one about
+  110 m out that must be left off.
+- The `!(distance <= reach)` guard in `BuildStationMarkers` keeps a `NaN` position out of the
+  scene, which would otherwise make every `/api/network` request throw. Nothing tests it. A
+  stop with `stop_lat` of `NaN` covers it.
+- Unit suffixes: `distancePastEdge` in `BuildStationMarkers` is in plane units, beside
+  `reachPlaneUnits`; `LabelRequest.anchorX`/`anchorY` are pixels, beside `widthPx`.
+- `RING_CENTRE_COLOR` in `stations.ts` repeats `BACKGROUND` in `main.ts` and the background in
+  `index.html`. `stations.ts` cannot import `main.ts`, whose top level touches the DOM, so the
+  shared colour needs a module of its own. Its comment, "so a ring reads as hollow over a
+  line", is not true over water.
+- Comments: `StationBuilder` "more than 2 lines" (it is two or more colours), "not a double"
+  (it is missing), "a Tuple" (a value tuple); `GtfsArchiveReader` "every stop in a sequence is
+  valid" (it checks this row's `stop_sequence` is a whole number); `StationBuilderTests` "Ten
+  rail platforms and stops" (eight); `labels.ts` "crosses a lines", "labels placement",
+  "boxes that share an edge do not overlap" (boxes that only touch along an edge). The example
+  scene in §8 shows Park Street as rank 2; it is 3.
+- Layout: `labels.ts` lines 58 and 60 are indented one level too deep; the body of the inner
+  loop in `stations.ts`'s `linesInPixels` is not indented; `web/src` mixes 2-space files
+  (`fit.ts`, `labels.ts`, `main.ts`) with 4-space ones (`draw.ts`, `stations.ts`);
+  `StationBuilder`'s rank chain puts `} else if` on one line in an otherwise Allman file.
+
 ### Superseded plan
 
 `docs/plans/2026-09-22-static-geometry-pipeline.md` built the whole static pipeline before
