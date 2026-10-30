@@ -5,6 +5,7 @@ export interface NetworkScene {
   artifactVersion: string;
   extent: ExtentInfo;
   lines: LineScene[];
+  stations: StationMarker[];
   water: WaterArea[];
 }
 
@@ -25,6 +26,14 @@ export interface ShapeGeometry {
   id: string;
   points: number[];
   lengthM: number;
+}
+
+/** A station. `rank` is 1 for an ordinary station, 2 for a terminus, 3 for an interchange. */
+export interface StationMarker {
+  x: number;
+  y: number;
+  name: string;
+  rank: number;
 }
 
 /** One body of water: its outline first, then one ring per island. Rings are implicitly closed. */

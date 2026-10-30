@@ -17,7 +17,7 @@ function recordingContext(): { context: CanvasRenderingContext2D; calls: string[
 }
 
 function sceneWith(water: NetworkScene['water']): NetworkScene {
-  return { artifactVersion: 'test@00000000', extent: { aspect: 1, coreRadiusKm: 22, spanKm: 10 }, lines: [], water };
+  return { artifactVersion: 'test@00000000', extent: { aspect: 1, coreRadiusKm: 22, spanKm: 10 }, lines: [], stations: [], water };
 }
 
 /** One pixel per hundredth of a unit, no offset: 0.5 lands on pixel 50. */
